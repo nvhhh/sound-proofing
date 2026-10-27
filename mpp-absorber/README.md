@@ -6,7 +6,7 @@ A single-material, 3D-printable absorber: a two-leaf micro-perforated panel
 ## Files
 - `mpp_absorber.stl`: watertight printable model.
 - `mpp_absorber_visualization.html`: interactive 3D view (explode the panel, watch the wave in the room and in each air gap) and absorption curve. Open in a browser.
-- `model.py`: micro-perforated panel model at normal incidence. Default is the exact viscous tube (Bessel) impedance with an end correction of 0.85 d; the Maa (1998) fit is kept as `leaf='maa98'`. Also gives the field and energy split through the stack (`stack_field`).
+- `model.py`: micro-perforated panel model at normal incidence. Default is the exact viscous tube (Bessel) impedance with an end correction of 0.68 d, calibrated to a resolved 2-D Stokes simulation of one hole; the Maa (1998) fit is kept as `leaf='maa98'`. Also gives the field and energy split through the stack (`stack_field`).
 - `measure.py`: two-microphone impedance-tube analysis (ISO 10534-2) from measured transfer functions.
 - `tests/`: unit tests (`python3 -m pytest tests`).
 - `build_stl.py`: generates the STL (needs `numpy trimesh manifold3d shapely mapbox_earcut`).
@@ -31,7 +31,8 @@ Energy split inside the stack, band average: front leaf ≈ 0.29, rear leaf ≈ 
 - The Maa impedance, the air-gap impedance and the two-leaf cascade agree with an independent transfer-matrix calculation (max difference ~1e-15).
 - Energy balance: the heat dissipated in the two leaves equals 1 − |R|² at every frequency. The wall velocity is zero, so the boundary condition holds.
 - Holes on ribs: 231 of 1600 front holes and 76 of 400 rear holes sit over a rib and are blocked. The model ignores this. Removing them lowers the band average to about 0.64, but it is wasted area. `open_fraction` in `build_data.py` computes these counts; the as-built curve (dashed on the chart) uses them.
-- End correction 0.85 d is a standard value, not measured. The 3-D mouth flow is not resolved.
+- End correction 0.68 d comes from a 2-D resolved Stokes simulation of one hole (0.66–0.70 d); the usual 0.85 d overestimates the mass term by about 20%. The simulation used an equal-area cylinder, not the square array, and is not full 3-D.
+- Plate vibration (`structure.py`): the 18 mm cell leaf's first mode is about 4 kHz and the rib walls' is about 4.6 kHz, both above the band. A clamped leaf moves at under 0.6% of the air velocity, so its own mass does not enter the impedance. Mass-law re-radiation from the leaf is about 5% of incident intensity at 300 Hz and under 0.5% above 1 kHz.
 
 ## Validation still needed
 Print a coupon and measure it in an impedance tube (ASTM E1050 / ISO 10534-2).
@@ -50,3 +51,13 @@ A square tile of the absorber, sized by rib cells so it fits your printer.
 - Mounting: `screw` uses four countersunk M3 holes in the corner bosses; `tape` leaves the back flat for tape; `both` does both.
 - Corner bosses (8 mm) carry the screws and remove the holes under them.
 - The generator checks watertightness, but the design is not yet printed or measured.
+
+## Printing material (`structure.py`)
+| Material | Leaf first mode | Leaf velocity / air velocity (max) |
+|---|---|---|
+| PLA | 4.0 kHz | 0.006 |
+| PETG | 3.1 kHz | 0.010 |
+| ABS | 3.6 kHz | 0.009 |
+| Nylon (PA) | 2.8 kHz | 0.014 |
+
+The acoustic result does not depend on the material: the air in the holes sets the impedance. The material matters for stiffness (leaf modes), print fidelity (hole size, warp) and moisture (nylon). PLA or ABS keep the leaf modes above the band; nylon's first mode falls inside the upper edge of the band.

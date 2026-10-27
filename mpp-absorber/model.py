@@ -58,13 +58,14 @@ def _mpp_z(w, d, t, pitch):
     return r + 1j * x
 
 
-def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.85):
+def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.68):
     """Field and energy split through MPP leaves in series, each with its own air gap.
 
     layers     list of (d, t, pitch, gap) from the front face to the rigid back;
                gap is the cavity behind that leaf.
     leaf       'exact' (Bessel tube, default) or 'maa98' (Maa 1998 fit, no end correction)
-    t_end_factor  end correction as a multiple of the hole diameter (0.85 is the usual value)
+    t_end_factor  end correction as a multiple of the hole diameter. 0.68 is calibrated to a
+               2-D resolved Stokes simulation of one hole (0.66-0.70 d); the common 0.85 d overestimates it
     open_frac  per-leaf fraction of holes that open into the cavity (None = all).
                Holes sitting on a rib open onto solid plastic, so they do not count.
 

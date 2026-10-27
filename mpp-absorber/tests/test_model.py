@@ -41,3 +41,18 @@ def test_two_microphone_recovers_known_reflection():
     alpha, R = alpha_from_tf(H12, F, s, x1)
     assert np.allclose(np.abs(R), 0.6, atol=1e-9)
     assert np.allclose(alpha, 1 - 0.36, atol=1e-9)
+
+
+def test_leaf_cell_stays_still_in_band():
+    from structure import plate_velocity_ratio
+    assert np.max(plate_velocity_ratio(F, 0.018, 0.8e-3)) < 0.02
+
+
+def test_leaf_cell_mode_above_band():
+    from structure import plate_modes
+    assert plate_modes(0.018, 0.018, 0.8e-3)[0][0] > 3000
+
+
+def test_wall_mode_above_band():
+    from structure import plate_modes
+    assert plate_modes(0.025, 0.018, 1.2e-3)[0][0] > 3000

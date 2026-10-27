@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Micro-Perforated Absorber</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --fg: #1d1f23; --muted: #6b7079; --card: #ffffff; --line: #d9d7cf;
+    --accent: #2f6fbf; --warm: #c8553d; --cool: #2f6fbf;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171b; --fg: #e8e8ea; --muted: #9aa0a8; --card: #1d2026; --line: #343841;
+      --accent: #7fb0ea; --warm: #ef8a6f; --cool: #7fb0ea;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171b; --fg: #e8e8ea; --muted: #9aa0a8; --card: #1d2026; --line: #343841;
+    --accent: #7fb0ea; --warm: #ef8a6f; --cool: #7fb0ea;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { font-size: 22px; margin: 4px 0 6px; }
+  h2 { font-size: 16px; margin: 0 0 8px; }
+  p { margin: 6px 0; }
+  .muted { color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-top: 14px; }
+  #scene { width: 100%; height: 440px; border-radius: 8px; overflow: hidden; background: #e9ebef; position: relative; }
+  :root[data-theme="dark"] #scene, :root:not([data-theme="light"]) #scene { background: #0f1115; }
+  #scene canvas { display: block; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 5px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 10px; }
+  button { font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--line);
+           background: var(--card); color: var(--fg); cursor: pointer; }
+  input[type=range] { flex: 1 1 260px; }
+  .readout { display: grid; grid-template-columns: repeat(3, minmax(90px, 1fr)); gap: 10px; margin-top: 10px; }
+  .readout div { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .readout b { display: block; font-size: 20px; font-weight: 600; }
+  .readout span { font-size: 12px; color: var(--muted); }
+  canvas#chart { width: 100%; height: 240px; display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td, th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; width: 36%; }
+  ul { padding-left: 20px; margin: 6px 0; }
+  li { margin: 3px 0; }
+  .note { font-size: 13px; color: var(--muted); }
+  @media (max-width: 600px) {
+    .readout { grid-template-columns: repeat(2, 1fr); }
+    #scene { height: 340px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Micro-perforated absorber: how a 300&ndash;3000 Hz wave moves through it</h1>
+  <p class="muted">Proof of concept. One printed part in PLA or PETG, no foam, no fabric, no second material.
+     Drag to orbit, scroll to zoom. Move the frequency slider to see the standing-wave pattern change.</p>
+
+  <div class="card">
+    <h2>3D view (sound arrives from the viewer's side, travels into the panel)</h2>
+    <div id="scene"></div>
+    <div class="legend">
+      <span><span class="sw" style="background:#c8553d"></span>positive pressure (compression)</span>
+      <span><span class="sw" style="background:#2f6fbf"></span>negative pressure (rarefaction)</span>
+      <span><span class="sw" style="background:#9aa0a8"></span>printed solid</span>
+    </div>
+    <div class="controls">
+      <button id="play">Pause</button>
+      <label for="freq" class="muted">Frequency</label>
+      <input id="freq" type="range" min="0" max="239" value="0" step="1">
+    </div>
+    <div class="readout">
+      <div><b id="rf">--</b><span>frequency</span></div>
+      <div><b id="ra">--</b><span>absorption &alpha;</span></div>
+      <div><b id="rr">--</b><span>reflected energy |R|&sup2;</span></div>
+    </div>
+    <p class="note">Field shown: the incident wave plus its reflection in the room (1-D normal-incidence model).
+       The front face is tinted by the air velocity entering (red) or leaving (blue) the 0.5&nbsp;mm holes.
+       Animation time is slowed down so the motion is visible; wavelengths and phase relations are physical.</p>
+  </div>
+
+  <div class="card">
+    <h2>Absorption across the band</h2>
+    <canvas id="chart"></canvas>
+    <p class="note" id="summary"></p>
+  </div>
+
+  <div class="card">
+    <h2>Design (what gets printed)</h2>
+    <table>
+      <tr><th>Material</th><td>PLA or PETG, single material, one print</td></tr>
+      <tr><th>Coupon</th><td>120 &times; 120 mm, 53.6 mm deep</td></tr>
+      <tr><th>Front leaf</th><td>0.8 mm thick, 0.5 mm holes on a 3 mm grid (1600 holes, perforation &sigma;&nbsp;&asymp;&nbsp;2.2%)</td></tr>
+      <tr><th>Air gap 1</th><td>25 mm, divided by 1.2 mm ribs on a 20 mm grid</td></tr>
+      <tr><th>Rear leaf</th><td>0.8 mm thick, 0.5 mm holes on a 6 mm grid (400 holes, perforation &sigma;&nbsp;&asymp;&nbsp;0.5%)</td></tr>
+      <tr><th>Air gap 2</th><td>25 mm, same ribbed grid</td></tr>
+      <tr><th>Back wall</th><td>2 mm solid</td></tr>
+      <tr><th>Print</th><td>0.4 mm nozzle, 0.1 mm layers, front leaf on the bed so the holes print vertically. Enable hole compensation or check the 0.5 mm holes with a pin gauge.</td></tr>
+    </table>
+    <p class="note">Why two leaves: one perforated plate gives a narrow peak. Two leaves with different hole spacing
+       stagger their resonances, which spreads the absorption across the band. The second leaf's wider
+       hole spacing adds a separate resonance above the first.</p>
+  </div>
+
+  <div class="card">
+    <h2>Limits of this proof of concept</h2>
+    <ul>
+      <li>The curves come from the Maa (1998) micro-perforated-panel model at normal incidence. The 3D view shows that 1-D field, not a full 3-D simulation of the holes.</li>
+      <li>The band average is about 0.56, with dips near 300 Hz and above 2.5 kHz. A realistic target is a broad mid-band absorber, not a flat 1.0 across 300&ndash;3000 Hz. Lifting the edges needs more depth: a 70 mm stack reached a band average near 0.59 in the model.</li>
+      <li>0.5 mm holes are at the limit of a 0.4 mm nozzle. Print a test strip first and measure the real hole diameter.</li>
+      <li>Validate before trusting the numbers: test a printed coupon in an impedance tube (ASTM E1050 or ISO 10534-2).</li>
+    </ul>
+  </div>
+</main>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const D = {"f": [300.0, 302.9, 305.84, 308.8, 311.79, 314.81, 317.85, 320.93, 324.04, 327.17, 330.34, 333.54, 336.77, 340.03, 343.32, 346.64, 350.0, 353.39, 356.81, 360.26, 363.75, 367.27, 370.83, 374.42, 378.04, 381.7, 385.4, 389.13, 392.89, 396.7, 400.54, 404.42, 408.33, 412.28, 416.28, 420.31, 424.37, 428.48, 432.63, 436.82, 441.05, 445.32, 449.63, 453.98, 458.38, 462.81, 467.29, 471.82, 476.38, 481.0, 485.65, 490.35, 495.1, 499.89, 504.73, 509.62, 514.55, 519.54, 524.56, 529.64, 534.77, 539.95, 545.17, 550.45, 555.78, 561.16, 566.59, 572.08, 577.62, 583.21, 588.85, 594.56, 600.31, 606.12, 611.99, 617.92, 623.9, 629.94, 636.04, 642.19, 648.41, 654.69, 661.02, 667.42, 673.88, 680.41, 687.0, 693.65, 700.36, 707.14, 713.99, 720.9, 727.88, 734.92, 742.04, 749.22, 756.48, 763.8, 771.19, 778.66, 786.2, 793.81, 801.49, 809.25, 817.09, 825.0, 832.98, 841.05, 849.19, 857.41, 865.71, 874.09, 882.55, 891.1, 899.72, 908.43, 917.23, 926.11, 935.07, 944.12, 953.26, 962.49, 971.81, 981.22, 990.72, 1000.31, 1009.99, 1019.77, 1029.64, 1039.61, 1049.67, 1059.84, 1070.1, 1080.45, 1090.91, 1101.48, 1112.14, 1122.9, 1133.78, 1144.75, 1155.83, 1167.02, 1178.32, 1189.73, 1201.25, 1212.87, 1224.62, 1236.47, 1248.44, 1260.53, 1272.73, 1285.05, 1297.49, 1310.05, 1322.73, 1335.54, 1348.47, 1361.52, 1374.7, 1388.01, 1401.45, 1415.02, 1428.71, 1442.55, 1456.51, 1470.61, 1484.85, 1499.22, 1513.74, 1528.39, 1543.19, 1558.13, 1573.21, 1588.44, 1603.82, 1619.34, 1635.02, 1650.85, 1666.83, 1682.97, 1699.26, 1715.71, 1732.32, 1749.09, 1766.02, 1783.12, 1800.38, 1817.81, 1835.41, 1853.17, 1871.11, 1889.23, 1907.52, 1925.98, 1944.63, 1963.45, 1982.46, 2001.65, 2021.03, 2040.6, 2060.35, 2080.3, 2100.44, 2120.77, 2141.3, 2162.03, 2182.96, 2204.09, 2225.43, 2246.98, 2268.73, 2290.69, 2312.87, 2335.26, 2357.86, 2380.69, 2403.74, 2427.01, 2450.5, 2474.23, 2498.18, 2522.36, 2546.78, 2571.44, 2596.33, 2621.46, 2646.84, 2672.47, 2698.34, 2724.46, 2750.83, 2777.46, 2804.35, 2831.5, 2858.91, 2886.59, 2914.53, 2942.75, 2971.24, 3000.0], "alpha": [0.202, 0.2074, 0.213, 0.2187, 0.2246, 0.2307, 0.237, 0.2434, 0.2501, 0.2569, 0.264, 0.2713, 0.2788, 0.2866, 0.2946, 0.3028, 0.3113, 0.3201, 0.3291, 0.3384, 0.348, 0.3578, 0.368, 0.3784, 0.3892, 0.4003, 0.4117, 0.4234, 0.4355, 0.4478, 0.4605, 0.4736, 0.487, 0.5007, 0.5147, 0.5291, 0.5438, 0.5588, 0.5741, 0.5897, 0.6056, 0.6217, 0.6381, 0.6546, 0.6714, 0.6883, 0.7053, 0.7224, 0.7396, 0.7567, 0.7738, 0.7907, 0.8075, 0.824, 0.8402, 0.856, 0.8713, 0.8862, 0.9004, 0.914, 0.9268, 0.9387, 0.9498, 0.9599, 0.969, 0.977, 0.9839, 0.9895, 0.994, 0.9972, 0.9992, 0.9999, 0.9993, 0.9975, 0.9945, 0.9902, 0.9849, 0.9784, 0.9708, 0.9623, 0.9528, 0.9425, 0.9314, 0.9196, 0.9071, 0.8942, 0.8807, 0.8669, 0.8528, 0.8384, 0.8238, 0.8092, 0.7945, 0.7798, 0.7652, 0.7507, 0.7364, 0.7223, 0.7084, 0.6949, 0.6816, 0.6688, 0.6563, 0.6442, 0.6326, 0.6214, 0.6106, 0.6004, 0.5907, 0.5814, 0.5727, 0.5646, 0.557, 0.5499, 0.5435, 0.5376, 0.5323, 0.5276, 0.5235, 0.52, 0.5172, 0.5151, 0.5136, 0.5128, 0.5126, 0.5132, 0.5145, 0.5166, 0.5194, 0.523, 0.5273, 0.5325, 0.5385, 0.5453, 0.553, 0.5615, 0.5709, 0.5811, 0.5922, 0.6042, 0.6169, 0.6304, 0.6447, 0.6597, 0.6753, 0.6914, 0.708, 0.7248, 0.7418, 0.7589, 0.7757, 0.7921, 0.808, 0.823, 0.837, 0.8496, 0.8608, 0.8702, 0.8777, 0.8832, 0.8864, 0.8873, 0.8859, 0.8821, 0.8761, 0.8678, 0.8574, 0.8451, 0.831, 0.8154, 0.7984, 0.7803, 0.7612, 0.7414, 0.7211, 0.7004, 0.6795, 0.6585, 0.6377, 0.617, 0.5966, 0.5766, 0.557, 0.5379, 0.5193, 0.5013, 0.4838, 0.4669, 0.4505, 0.4348, 0.4196, 0.405, 0.391, 0.3775, 0.3645, 0.3521, 0.3402, 0.3287, 0.3177, 0.3071, 0.297, 0.2872, 0.2779, 0.2689, 0.2603, 0.2521, 0.2441, 0.2365, 0.2292, 0.2221, 0.2154, 0.2089, 0.2026, 0.1966, 0.1908, 0.1852, 0.1798, 0.1746, 0.1696, 0.1647, 0.1601, 0.1556, 0.1513, 0.1471, 0.143, 0.1391, 0.1354, 0.1317, 0.1282, 0.1248, 0.1214, 0.1183, 0.1152, 0.1122, 0.1092, 0.1064, 0.1037, 0.1011, 0.0985, 0.096], "reR": [0.71277, 0.70577, 0.69859, 0.69121, 0.68364, 0.67586, 0.66787, 0.65967, 0.65125, 0.6426, 0.63372, 0.62461, 0.61525, 0.60565, 0.5958, 0.58569, 0.57532, 0.56468, 0.55377, 0.54259, 0.53113, 0.51938, 0.50735, 0.49504, 0.48244, 0.46955, 0.45637, 0.4429, 0.42915, 0.41512, 0.40081, 0.38623, 0.37139, 0.35631, 0.34098, 0.32543, 0.30968, 0.29374, 0.27763, 0.26139, 0.24505, 0.22862, 0.21216, 0.1957, 0.17929, 0.16297, 0.1468, 0.13083, 0.11512, 0.09975, 0.08476, 0.07025, 0.05627, 0.04292, 0.03026, 0.01839, 0.00737, -0.00271, -0.01177, -0.01974, -0.02653, -0.03209, -0.03635, -0.03925, -0.04075, -0.0408, -0.03938, -0.03647, -0.03206, -0.02615, -0.01877, -0.00993, 0.00032, 0.01193, 0.02484, 0.03898, 0.05428, 0.07064, 0.08798, 0.1062, 0.12519, 0.14487, 0.16511, 0.18582, 0.20691, 0.22826, 0.24978, 0.27138, 0.29297, 0.31446, 0.33579, 0.35687, 0.37764, 0.39803, 0.418, 0.43748, 0.45643, 0.47482, 0.4926, 0.50974, 0.52621, 0.54198, 0.55704, 0.57136, 0.58492, 0.5977, 0.6097, 0.62089, 0.63127, 0.64082, 0.64952, 0.65737, 0.66435, 0.67045, 0.67565, 0.67994, 0.6833, 0.68571, 0.68715, 0.6876, 0.68704, 0.68543, 0.68275, 0.67897, 0.67405, 0.66796, 0.66066, 0.65211, 0.64226, 0.63108, 0.61851, 0.60451, 0.58902, 0.57201, 0.55343, 0.53323, 0.51138, 0.48783, 0.46257, 0.43558, 0.40686, 0.37641, 0.34427, 0.3105, 0.27517, 0.23839, 0.20031, 0.1611, 0.121, 0.08025, 0.03916, -0.00192, -0.04262, -0.08251, -0.12117, -0.15814, -0.19295, -0.22516, -0.25434, -0.28011, -0.30213, -0.32012, -0.3339, -0.34332, -0.34837, -0.34909, -0.34558, -0.33804, -0.32673, -0.31192, -0.29395, -0.27318, -0.24996, -0.22465, -0.19762, -0.16919, -0.13969, -0.1094, -0.07861, -0.04753, -0.01638, 0.01466, 0.04543, 0.0758, 0.10567, 0.13494, 0.16355, 0.19145, 0.21858, 0.24493, 0.27048, 0.29521, 0.31912, 0.34222, 0.36452, 0.38602, 0.40675, 0.42673, 0.44596, 0.46448, 0.4823, 0.49946, 0.51597, 0.53185, 0.54713, 0.56184, 0.57599, 0.58961, 0.60271, 0.61533, 0.62748, 0.63917, 0.65043, 0.66128, 0.67173, 0.6818, 0.69151, 0.70087, 0.7099, 0.7186, 0.727, 0.7351, 0.74293, 0.75048, 0.75777, 0.76482, 0.77162, 0.7782, 0.78456, 0.79071, 0.79665, 0.8024, 0.80797, 0.81335, 0.81856, 0.82361, 0.8285, 0.83323, 0.83782, 0.84226], "reI": [-0.53845, -0.54264, -0.5468, -0.55093, -0.55501, -0.55905, -0.56303, -0.56694, -0.57079, -0.57457, -0.57826, -0.58185, -0.58534, -0.58872, -0.59198, -0.5951, -0.59807, -0.60089, -0.60353, -0.60598, -0.60823, -0.61026, -0.61205, -0.61359, -0.61485, -0.61582, -0.61648, -0.61679, -0.61675, -0.61632, -0.61548, -0.6142, -0.61246, -0.61023, -0.60747, -0.60416, -0.60027, -0.59577, -0.59062, -0.5848, -0.57827, -0.571, -0.56297, -0.55414, -0.54448, -0.53398, -0.5226, -0.51033, -0.49715, -0.48305, -0.46802, -0.45206, -0.43517, -0.41735, -0.39864, -0.37904, -0.3586, -0.33736, -0.31535, -0.29265, -0.26931, -0.24542, -0.22106, -0.19631, -0.17128, -0.14607, -0.1208, -0.09557, -0.0705, -0.04571, -0.02131, 0.00256, 0.02582, 0.04833, 0.07, 0.09074, 0.11045, 0.12906, 0.1465, 0.16269, 0.17761, 0.19119, 0.20342, 0.21428, 0.22374, 0.23182, 0.23852, 0.24385, 0.24783, 0.25049, 0.25186, 0.25197, 0.25087, 0.2486, 0.24519, 0.24071, 0.23518, 0.22866, 0.2212, 0.21284, 0.20362, 0.19359, 0.1828, 0.17128, 0.15907, 0.14621, 0.13274, 0.11868, 0.10408, 0.08897, 0.07336, 0.0573, 0.04081, 0.02391, 0.00664, -0.011, -0.02896, -0.04724, -0.0658, -0.08462, -0.10367, -0.12294, -0.14238, -0.16198, -0.18169, -0.20149, -0.22133, -0.24117, -0.26096, -0.28065, -0.30017, -0.31946, -0.33844, -0.35702, -0.37511, -0.3926, -0.40938, -0.4253, -0.44022, -0.45399, -0.46644, -0.47736, -0.48658, -0.49386, -0.499, -0.50176, -0.50191, -0.49922, -0.49347, -0.48446, -0.47199, -0.45591, -0.43612, -0.41253, -0.38516, -0.35405, -0.31933, -0.2812, -0.23994, -0.19588, -0.14943, -0.10104, -0.05121, -0.00045, 0.05071, 0.10175, 0.15219, 0.20156, 0.24944, 0.29549, 0.3394, 0.38093, 0.41991, 0.45622, 0.48978, 0.52058, 0.54864, 0.57401, 0.59677, 0.61702, 0.63489, 0.65051, 0.66401, 0.67553, 0.68521, 0.69319, 0.69962, 0.70461, 0.70829, 0.71078, 0.71218, 0.71261, 0.71215, 0.7109, 0.70893, 0.70632, 0.70314, 0.69944, 0.6953, 0.69076, 0.68586, 0.68066, 0.67518, 0.66947, 0.66355, 0.65746, 0.65123, 0.64486, 0.6384, 0.63184, 0.62522, 0.61855, 0.61184, 0.6051, 0.59835, 0.59159, 0.58484, 0.5781, 0.57138, 0.56468, 0.55801, 0.55138, 0.54479, 0.53824, 0.53174, 0.52529, 0.51889, 0.51254, 0.50626, 0.50003, 0.49386, 0.48775, 0.4817, 0.47572, 0.4698, 0.46394, 0.45814, 0.45241, 0.44675, 0.44114], "mean": 0.563};
+const N = D.f.length;
+const SPEED = 343.0;      // m/s
+const UNIT = 0.1;         // scene unit = 100 mm = 0.1 m
+
+// ----- scene -----------------------------------------------------------
+const host = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+host.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 50);
+camera.position.set(1.9, 1.5, 2.6);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0.6, 0.6, -0.2);
+controls.enableDamping = true;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.9);
+sun.position.set(2, 3, 4);
+scene.add(sun);
+
+const SIZE = 1.2;
+const stepMM = (mm) => mm * 0.01;             // mm -> scene units
+const Z = {                                    // depth stack, z = 0 at front face
+  front: 0.0, gap1: -0.008, leaf2: -0.258, gap2: -0.266, back: -0.516, end: -0.536
+};
+
+function holedShape(pitchMM) {
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0); shape.lineTo(SIZE, 0); shape.lineTo(SIZE, SIZE); shape.lineTo(0, SIZE);
+  shape.lineTo(0, 0);
+  const n = Math.floor(120 / pitchMM);
+  const off = (120 - (n - 1) * pitchMM) / 2;
+  const r = stepMM(0.25);
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+    const p = new THREE.Path();
+    p.absarc(stepMM(off + i * pitchMM), stepMM(off + j * pitchMM), r, 0, Math.PI * 2, true);
+    shape.holes.push(p);
+  }
+  return shape;
+}
+
+const plateMat = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.7, side: THREE.DoubleSide });
+const frontPlate = new THREE.Mesh(new THREE.ShapeGeometry(holedShape(3), 6), plateMat);
+frontPlate.position.z = Z.front;
+const rearPlate = new THREE.Mesh(new THREE.ShapeGeometry(holedShape(6), 6), plateMat);
+rearPlate.position.z = Z.leaf2;
+scene.add(frontPlate, rearPlate);
+
+const ribMat = new THREE.MeshStandardMaterial({ color: 0xb8bec6, roughness: 0.8 });
+function addRibs(zCenter, height) {
+  for (let i = 0; i <= 6; i++) {
+    const x = i < 6 ? i * stepMM(20) + stepMM(0.6) : SIZE - stepMM(0.6);
+    const a = new THREE.Mesh(new THREE.BoxGeometry(stepMM(1.2), SIZE, height), ribMat);
+    a.position.set(x, SIZE / 2, zCenter);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(SIZE, stepMM(1.2), height), ribMat);
+    b.position.set(SIZE / 2, x, zCenter);
+    scene.add(a, b);
+  }
+}
+addRibs((Z.gap1 + Z.leaf2) / 2, Math.abs(Z.leaf2 - Z.gap1));
+addRibs((Z.gap2 + Z.back) / 2, Math.abs(Z.back - Z.gap2));
+const back = new THREE.Mesh(new THREE.BoxGeometry(SIZE, SIZE, Z.end - Z.back), ribMat);
+back.position.set(SIZE / 2, SIZE / 2, (Z.back + Z.end) / 2);
+scene.add(back);
+
+// Air-flow tint on the front face: red = air pushed into the holes, blue = pulled out.
+const flowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false });
+const flow = new THREE.Mesh(new THREE.PlaneGeometry(SIZE, SIZE), flowMat);
+flow.position.set(SIZE / 2, SIZE / 2, 0.002);
+scene.add(flow);
+
+// Pressure sheets in the room: each one is a slice of the 1-D wave at its depth.
+const SHEETS = 60;
+const ROOM = 3.0;                               // room depth shown, scene units
+const sheetMat = [];
+for (let i = 0; i < SHEETS; i++) {
+  const m = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(SIZE * 1.6, SIZE * 1.6), m);
+  s.position.set(SIZE / 2, SIZE / 2, (i + 0.5) * (ROOM / SHEETS));
+  scene.add(s);
+  sheetMat.push({ mesh: s, mat: m, z: (i + 0.5) * (ROOM / SHEETS) });
+}
+
+function resize() {
+  const w = host.clientWidth, h = host.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ----- physics readout (from the impedance model) ----------------------
+let idx = D.f.findIndex(v => v >= 1000);
+let playing = true;
+let clock = 0;
+
+function refl(i) { return { re: D.reR[i], im: D.reI[i] }; }
+
+// Pressure at depth z (scene units, measured out from the front face) and phase theta.
+// Incident wave e^{j(theta + kz)}, reflected R e^{j(theta - kz)}; p = Re{ e^{j theta} (e^{jkz} + R e^{-jkz}) }.
+function pressureAt(zUnits, theta, i) {
+  const f = D.f[i];
+  const k = 2 * Math.PI * f / SPEED;
+  const zm = zUnits * UNIT;
+  const R = refl(i);
+  const cr = Math.cos(k * zm), ci = Math.sin(k * zm);
+  // e^{jkz} + R e^{-jkz}
+  const sr = cr + (R.re * cr + R.im * ci);
+  const si = ci + (R.im * cr - R.re * ci);
+  return Math.cos(theta) * sr - Math.sin(theta) * si;
+}
+function flowAt(theta, i) {
+  // surface velocity is (1 - R) p_inc / rho c; sign convention: positive = into the panel
+  const R = refl(i);
+  return Math.cos(theta) * (1 - R.re) + Math.sin(theta) * R.im;
+}
+
+// ----- chart -------------------------------------------------------------
+const chart = document.getElementById('chart');
+const ctx = chart.getContext('2d');
+function drawChart() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = chart.clientWidth, h = chart.clientHeight;
+  chart.width = w * dpr; chart.height = h * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const css = getComputedStyle(document.documentElement);
+  const fg = css.getPropertyValue('--fg').trim();
+  const muted = css.getPropertyValue('--muted').trim();
+  const line = css.getPropertyValue('--line').trim();
+  const accent = css.getPropertyValue('--accent').trim();
+  const padL = 40, padR = 14, padT = 12, padB = 34;
+  const x = (f) => padL + (Math.log(f / 300) / Math.log(10)) * (w - padL - padR);
+  const y = (a) => padT + (1 - a) * (h - padT - padB);
+  ctx.clearRect(0, 0, w, h);
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.strokeStyle = line; ctx.fillStyle = muted; ctx.lineWidth = 1;
+  for (const a of [0, 0.25, 0.5, 0.75, 1]) {
+    ctx.beginPath(); ctx.moveTo(padL, y(a)); ctx.lineTo(w - padR, y(a)); ctx.stroke();
+    ctx.fillText(a.toFixed(2), 4, y(a) + 4);
+  }
+  for (const f of [300, 500, 1000, 2000, 3000]) {
+    ctx.beginPath(); ctx.moveTo(x(f), padT); ctx.lineTo(x(f), h - padB); ctx.stroke();
+    ctx.fillText(f + ' Hz', x(f) - 18, h - 14);
+  }
+  ctx.strokeStyle = fg; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const px = x(D.f[i]), py = y(D.alpha[i]);
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.stroke();
+  // current frequency marker
+  ctx.strokeStyle = accent; ctx.fillStyle = accent; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(x(D.f[idx]), padT); ctx.lineTo(x(D.f[idx]), h - padB); ctx.stroke();
+  ctx.beginPath(); ctx.arc(x(D.f[idx]), y(D.alpha[idx]), 4, 0, Math.PI * 2); ctx.fill();
+}
+document.getElementById('summary').textContent =
+  'Mean absorption over 300–3000 Hz (log-spaced samples): ' + D.mean.toFixed(2) +
+  '. Peaks near 500 Hz and 1.5 kHz; weakest near 300 Hz and above 2.5 kHz.';
+
+// ----- controls ------------------------------------------------------------
+const slider = document.getElementById('freq');
+slider.max = N - 1;
+slider.value = idx;
+function syncReadout() {
+  const R = refl(idx);
+  document.getElementById('rf').textContent = Math.round(D.f[idx]) + ' Hz';
+  document.getElementById('ra').textContent = D.alpha[idx].toFixed(2);
+  document.getElementById('rr').textContent = (R.re * R.re + R.im * R.im).toFixed(2);
+  drawChart();
+}
+slider.addEventListener('input', () => { idx = +slider.value; syncReadout(); });
+document.getElementById('play').addEventListener('click', (e) => {
+  playing = !playing;
+  e.target.textContent = playing ? 'Pause' : 'Play';
+});
+window.addEventListener('resize', drawChart);
+syncReadout();
+
+// ----- animation -----------------------------------------------------------
+const ANIM_RATE = 0.6;   // visual cycles per second (slowed for viewing)
+const clockObj = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clockObj.getDelta();
+  if (playing) clock += dt;
+  const theta = 2 * Math.PI * ANIM_RATE * clock;
+  for (const s of sheetMat) {
+    const p = pressureAt(s.z, theta, idx);
+    const a = Math.min(1, Math.abs(p));
+    s.mat.color.set(p >= 0 ? 0xc8553d : 0x2f6fbf);
+    s.mat.opacity = 0.42 * a;
+  }
+  const u = flowAt(theta, idx);
+  const mag = Math.min(1, Math.abs(u));
+  flowMat.color.set(u >= 0 ? 0xc8553d : 0x2f6fbf);
+  flowMat.opacity = 0.55 * mag;
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>

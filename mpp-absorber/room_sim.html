@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MPP tiles in a room: reverberation estimate</title>
+<style>
+  :root { --bg:#f6f5f1; --fg:#1d1f23; --muted:#6b7079; --card:#ffffff; --line:#d9d7cf; --accent:#2f6fbf; --warm:#c8553d; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#15171b; --fg:#e8e8ea; --muted:#9aa0a8; --card:#1d2026; --line:#343841; --accent:#7fb0ea; --warm:#ef8a6f; } }
+  :root[data-theme="dark"] { --bg:#15171b; --fg:#e8e8ea; --muted:#9aa0a8; --card:#1d2026; --line:#343841; --accent:#7fb0ea; --warm:#ef8a6f; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 20px 16px 40px; }
+  h1 { font-size: 22px; margin: 4px 0 6px; } h2 { font-size: 16px; margin: 0 0 8px; }
+  .muted { color: var(--muted); } .note { font-size: 13px; color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; margin-top: 14px; }
+  #room { width: 100%; height: 380px; border-radius: 8px; overflow: hidden; background: #e9ebef; }
+  :root[data-theme="dark"] #room, :root:not([data-theme="light"]) #room { background: #0f1115; }
+  #room canvas { display: block; }
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 10px; }
+  select, input[type=range] { font: inherit; }
+  select { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+  input[type=range] { flex: 1 1 240px; }
+  .readout { display: grid; grid-template-columns: repeat(4, minmax(100px, 1fr)); gap: 10px; margin-top: 10px; }
+  .readout div { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .readout b { display: block; font-size: 20px; font-weight: 600; }
+  .readout span { font-size: 12px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td, th { text-align: right; padding: 5px 8px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 500; }
+  .bar { height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; min-width: 120px; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+  .bar.after i { background: var(--warm); }
+  canvas#decay { width: 100%; height: 200px; display: block; }
+  @media (max-width: 600px) { .readout { grid-template-columns: repeat(2, 1fr); } #room { height: 300px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>MPP tiles in a room: reverberation estimate</h1>
+  <p class="muted">Sabine estimate with the tile absorption from the model (0.12 m tiles, 0.8 diffuse correction). Drag the room to orbit. Pick a room and how many square metres of wall to tile.</p>
+
+  <div class="card">
+    <div class="controls">
+      <label for="room-pick" class="muted">Room</label>
+      <select id="room-pick">
+        <option value="living">Living room, 5 × 4 × 2.5 m</option>
+        <option value="studio">Studio, 6 × 5 × 3 m</option>
+      </select>
+      <label for="cov" class="muted">Tiled wall area</label>
+      <input id="cov" type="range" min="0" max="30" step="0.5" value="6">
+      <span id="covv"></span>
+    </div>
+    <div id="room"></div>
+    <div class="readout">
+      <div><b id="ntiles">--</b><span>tiles</span></div>
+      <div><b id="rt500">--</b><span>RT60 at 500 Hz, s</span></div>
+      <div><b id="rt1k">--</b><span>RT60 at 1 kHz, s</span></div>
+      <div><b id="rtdrop">--</b><span>change at 500 Hz</span></div>
+    </div>
+    <p class="note" id="walltxt"></p>
+  </div>
+
+  <div class="card">
+    <h2>Reverberation time by octave band</h2>
+    <table>
+      <thead><tr><th>Band</th><th>Untreated</th><th>With tiles</th><th>Tile-related absorption</th></tr></thead>
+      <tbody id="rtbody"></tbody>
+    </table>
+    <p class="note">Target for a living room: about 0.4–0.5 s. For a music studio or control room: about 0.3–0.4 s at 500 Hz to 2 kHz. The bands 125 and 4 kHz are outside the modelled range and use assumed tile absorption (0.20).</p>
+  </div>
+
+  <div class="card">
+    <h2>Decay after a sound stops, 500 Hz</h2>
+    <canvas id="decay"></canvas>
+    <p class="note">Sound energy level against time after the source stops. Steeper slope = shorter reverberation. Blue: untreated. Orange: with tiles.</p>
+  </div>
+
+  <div class="card">
+    <h2>Assumptions and limits</h2>
+    <ul>
+      <li>Sabine formula, RT60 = 0.161 V / A, room treated as diffuse. Good for rooms with moderate absorption; over-estimates for very absorbent rooms.</li>
+      <li>Untreated absorption values are typical values for furnished rooms (assumed, not measured): living room with carpet, sofa and curtains; studio with a bare floor and hard walls.</li>
+      <li>Tile absorption is the model's band average over each octave, scaled by 0.8 for random incidence. Real rooms need a measured value for each tile.</li>
+      <li>Tiles are assumed to sit directly on the wall, with the 62 mm depth inside the tile. A gap behind the tile would raise low-frequency absorption.</li>
+      <li>Low frequencies (125–250 Hz) are not helped much by 62 mm-deep tiles. Bass traps or deeper absorbers are needed there.</li>
+    </ul>
+  </div>
+</main>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// Room data from the model (room_data.json) and the tile absorption by octave band.
+const BANDS = [125, 250, 500, 1000, 2000, 4000];
+const TILE = { 125: 0.20, 250: 0.35, 500: 0.81, 1000: 0.65, 2000: 0.64, 4000: 0.26 };   // model band averages, 125/4k assumed
+const DIFFUSE = 0.8;
+const TILE_M2 = 0.12 * 0.12;                                 // tile face area, m^2
+const SPACING = 0.14;                                        // 120 mm tile + 20 mm gap
+const ROOMS = {
+  living: { dims: [5.0, 4.0, 2.5], base: [0.20, 0.25, 0.30, 0.35, 0.40, 0.40] },
+  studio: { dims: [6.0, 5.0, 3.0], base: [0.10, 0.10, 0.12, 0.15, 0.18, 0.20] },
+};
+
+const $ = (id) => document.getElementById(id);
+const pick = $('room-pick'), cov = $('cov');
+
+// ----- acoustics -----
+function surfaces(r) {
+  const [x, y, z] = r.dims;
+  return { V: x * y * z, walls: 2 * (x + y) * z, ceil: x * y };          // ceiling + floor = 2 * x*y
+}
+function rt(r, tileM2, band) {
+  const s = surfaces(r), i = BANDS.indexOf(band), a = r.base[i];
+  const A0 = (s.walls + 2 * s.ceil) * a;
+  const At = A0 - tileM2 * a + tileM2 * TILE[band] * DIFFUSE;
+  return { before: 0.161 * s.V / A0, after: 0.161 * s.V / At, A0, At };
+}
+
+// ----- 3D room with tiles -----
+const host = $('room');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+host.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(4, 8, 6); scene.add(sun);
+const roomGroup = new THREE.Group(); scene.add(roomGroup);
+const tileGeo = new THREE.BoxGeometry(0.12, 0.12, 0.062);
+const tileMat = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.7 });
+let tileMesh = null;
+
+function buildRoom(r) {
+  roomGroup.clear();
+  const [x, y, z] = r.dims;
+  const shell = new THREE.Mesh(new THREE.BoxGeometry(x, z, y),
+    new THREE.MeshStandardMaterial({ color: 0xdedfe2, side: THREE.BackSide, roughness: 0.9 }));
+  shell.position.y = z / 2;
+  roomGroup.add(shell);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(x, y), new THREE.MeshStandardMaterial({ color: 0x8c7b64 }));
+  floor.rotation.x = -Math.PI / 2; roomGroup.add(floor);
+  camera.position.set(x * 0.9, z * 1.4, y * 1.2);
+  controls.target.set(0, z * 0.4, 0);
+}
+
+// Tile slots on the four walls, filled in order to the requested count.
+function wallSlots(r) {
+  const [x, y, z] = r.dims, out = [];
+  const walls = [
+    { len: x, at: (u, v) => [-x / 2 + u, v, -y / 2], n: [0, 0, 1] },
+    { len: x, at: (u, v) => [-x / 2 + u, v,  y / 2], n: [0, 0, -1] },
+    { len: y, at: (u, v) => [-x / 2, v, -y / 2 + u], n: [1, 0, 0] },
+    { len: y, at: (u, v) => [ x / 2, v, -y / 2 + u], n: [-1, 0, 0] },
+  ];
+  for (const w of walls) {
+    const cols = Math.floor(w.len / SPACING), rows = Math.floor(z / SPACING);
+    for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++)
+      out.push({ w, u: (col + 0.5) * SPACING + (w.len - cols * SPACING) / 2, v: (row + 0.5) * SPACING });
+  }
+  return out;
+}
+function placeTiles(r, n) {
+  if (tileMesh) { roomGroup.remove(tileMesh); tileMesh.dispose(); tileMesh = null; }
+  const slots = wallSlots(r), m = Math.min(n, slots.length);
+  tileMesh = new THREE.InstancedMesh(tileGeo, tileMat, m);
+  const M = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 0, 1);
+  for (let i = 0; i < m; i++) {
+    const s = slots[i], [px, py, pz] = s.w.at(s.u, s.v);
+    p.set(px, py, pz);
+    const nrm = new THREE.Vector3(...s.w.n);
+    q.setFromUnitVectors(up, nrm);
+    M.compose(p.clone().add(nrm.clone().multiplyScalar(0.031)), q, new THREE.Vector3(1, 1, 1));
+    tileMesh.setMatrixAt(i, M);
+  }
+  tileMesh.instanceMatrix.needsUpdate = true;
+  roomGroup.add(tileMesh);
+  return slots.length;
+}
+
+function resize() {
+  const w = host.clientWidth, h = host.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', () => { resize(); drawDecay(); });
+
+// ----- decay curve -----
+function drawDecay() {
+  const c = $('decay'), dpr = devicePixelRatio || 1;
+  const w = c.clientWidth, h = c.clientHeight;
+  c.width = w * dpr; c.height = h * dpr;
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const css = getComputedStyle(document.documentElement);
+  const line = css.getPropertyValue('--line').trim(), muted = css.getPropertyValue('--muted').trim();
+  const accent = css.getPropertyValue('--accent').trim(), warm = css.getPropertyValue('--warm').trim();
+  const r = ROOMS[pick.value], res = rt(r, +cov.value, 500);
+  const T = 2.0, pad = 36;
+  const x = (t) => pad + (t / T) * (w - pad - 10);
+  const y = (dB) => 10 + (-dB / 60) * (h - 30);     // 0 dB at top, -60 dB at bottom
+  g.clearRect(0, 0, w, h); g.font = '12px system-ui, sans-serif';
+  g.strokeStyle = line; g.fillStyle = muted;
+  for (const dB of [0, -20, -40, -60]) { g.beginPath(); g.moveTo(pad, y(dB)); g.lineTo(w - 10, y(dB)); g.stroke(); g.fillText(dB + ' dB', 2, y(dB) + 4); }
+  for (const t of [0, 0.5, 1, 1.5, 2]) g.fillText(t.toFixed(1) + ' s', x(t) - 8, h - 6);
+  for (const [rtv, col] of [[res.before, accent], [res.after, warm]]) {
+    g.strokeStyle = col; g.lineWidth = 2; g.beginPath();
+    for (let i = 0; i <= 100; i++) {
+      const t = (i / 100) * T, dB = Math.max(-60, -60 * t / rtv);
+      i ? g.lineTo(x(t), y(dB)) : g.moveTo(x(t), y(dB));
+    }
+    g.stroke();
+  }
+}
+
+// ----- readouts -----
+function update() {
+  const r = ROOMS[pick.value], n = Math.round(+cov.value / TILE_M2);
+  const area = +cov.value;
+  $('covv').textContent = area.toFixed(1) + ' m²';
+  const placed = placeTiles(r, n);
+  $('ntiles').textContent = n.toLocaleString('en-US');
+  const r500 = rt(r, area, 500), r1k = rt(r, area, 1000);
+  $('rt500').textContent = r500.after.toFixed(2);
+  $('rt1k').textContent = r1k.after.toFixed(2);
+  $('rtdrop').textContent = (r500.after - r500.before).toFixed(2);
+  $('walltxt').textContent = `Tiles fill the walls (${placed} slots available on the 4 walls). Covered area ${area.toFixed(1)} m² of ${surfaces(r).walls.toFixed(0)} m² wall.`;
+  const max = Math.max(...BANDS.map(b => rt(r, 0, b).before));
+  $('rtbody').innerHTML = BANDS.map(b => {
+    const q = rt(r, area, b);
+    const absorbed = (area * (TILE[b] * DIFFUSE - r.base[BANDS.indexOf(b)])).toFixed(2);
+    return `<tr><td>${b} Hz</td><td>${q.before.toFixed(2)} s <div class="bar"><i style="width:${(100 * q.before / max).toFixed(0)}%"></i></div></td>` +
+           `<td>${q.after.toFixed(2)} s <div class="bar after"><i style="width:${(100 * q.after / max).toFixed(0)}%"></i></div></td><td>${absorbed} m² sabin</td></tr>`;
+  }).join('');
+  drawDecay();
+}
+pick.addEventListener('change', () => {
+  const r = ROOMS[pick.value]; buildRoom(r);
+  cov.max = Math.floor(surfaces(r).walls * 0.8);
+  update();
+});
+cov.addEventListener('input', update);
+
+buildRoom(ROOMS[pick.value]);
+resize();
+update();
+function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); }
+loop();
+</script>
+</body>
+</html>

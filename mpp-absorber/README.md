@@ -56,3 +56,13 @@ The acoustic result does not depend on material; the air in the holes sets the i
 - Structure-borne transmission through the mounts is not modelled.
 - Nothing has been measured. Print a coupon and measure it in an impedance tube (ASTM E1050 / ISO 10534-2) with `measure.py`.
 - 0.5 mm holes at a 0.4 mm nozzle need a test print to confirm diameter; the 0.4 mm web is at the printer's minimum.
+
+## Room estimates (`room_sim.html`)
+Sabine estimate, tiles on the walls, 0.8 diffuse correction, untreated absorption assumed typical.
+
+| Room | Tiled area | Tiles | RT60 500 Hz before → after | RT60 1 kHz before → after |
+|---|---|---|---|---|
+| Living room 5 × 4 × 2.5 m | 6 m² | 417 | 0.32 → 0.29 s | 0.27 → 0.26 s |
+| Studio 6 × 5 × 3 m | 12 m² | 833 | 0.96 → 0.68 s | 0.77 → 0.62 s |
+
+A studio target of 0.3–0.4 s at 500 Hz to 2 kHz needs about 30 m² of tile on this estimate. Low frequencies (125–250 Hz) need bass traps; 62 mm tiles do little there.

@@ -34,3 +34,17 @@ Energy split inside the stack, band average: front leaf ≈ 0.23, rear leaf ≈ 
 ## Validation still needed
 Print a coupon and measure it in an impedance tube (ASTM E1050 / ISO 10534-2).
 0.5 mm holes are at the limit of a 0.4 mm nozzle; check hole diameter first.
+
+## Stackable parametric tile (`tile.py`)
+A square tile of the absorber, sized by rib cells so it fits your printer.
+
+    python3 tile.py                    # 6 x 6 cells = 108 mm, screws and tape
+    python3 tile.py --bed 220          # largest tile that fits a 220 mm bed
+    python3 tile.py --cells 3 --mount tape
+
+- Size: `cells` x 18 mm. Holes sit between the rib lines, so none are blocked by a rib.
+- Depth: 56.6 mm (two 0.8 mm leaves, two 25 mm cavities, 5 mm back).
+- Stacking: tiles butt edge to edge. Two 3 mm dowels (about 6 mm into each side socket) align neighbours.
+- Mounting: `screw` uses four countersunk M3 holes in the corner bosses; `tape` leaves the back flat for tape; `both` does both.
+- Corner bosses (8 mm) carry the screws and remove the holes under them.
+- The generator checks watertightness, but the design is not yet printed or measured.

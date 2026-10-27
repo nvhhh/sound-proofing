@@ -4,6 +4,7 @@ Maa (1998) microperforated-panel impedance, air gap D behind a rigid wall.
 All quantities SI: metres, seconds, Pa.
 """
 import numpy as np
+from scipy.special import jv
 
 C = 343.0          # speed of sound, m/s
 RHO = 1.21         # air density, kg/m^3
@@ -37,6 +38,18 @@ def band_mean(alpha, f, lo=300.0, hi=3000.0):
     return float(np.mean(alpha[m]))
 
 
+def _mpp_z_exact(w, d, t, pitch, t_end=0.0):
+    """Exact viscous tube impedance per leaf (Bessel form), with an end correction.
+
+    Resolves the viscous boundary layer in each hole, unlike the Maa (1998) fit.
+    t_end adds an effective plate thickness for the open ends of each hole.
+    """
+    sigma = np.pi * d**2 / (4 * pitch**2)
+    kap = (d / 2) * np.sqrt(-1j * w * RHO / MU)
+    f = 1 - 2 * jv(1, kap) / (kap * jv(0, kap))
+    return 1j * w * RHO * (t + t_end) / sigma / f
+
+
 def _mpp_z(w, d, t, pitch):
     sigma = np.pi * d**2 / (4 * pitch**2)
     k = d * np.sqrt(w * RHO / (4 * MU))
@@ -45,11 +58,13 @@ def _mpp_z(w, d, t, pitch):
     return r + 1j * x
 
 
-def stack_field(f, layers, open_frac=None):
+def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.85):
     """Field and energy split through MPP leaves in series, each with its own air gap.
 
     layers     list of (d, t, pitch, gap) from the front face to the rigid back;
                gap is the cavity behind that leaf.
+    leaf       'exact' (Bessel tube, default) or 'maa98' (Maa 1998 fit, no end correction)
+    t_end_factor  end correction as a multiple of the hole diameter (0.85 is the usual value)
     open_frac  per-leaf fraction of holes that open into the cavity (None = all).
                Holes sitting on a rib open onto solid plastic, so they do not count.
 
@@ -63,7 +78,10 @@ def stack_field(f, layers, open_frac=None):
     w = 2 * np.pi * f
     k0 = w / C
     open_frac = [1.0] * len(layers) if open_frac is None else open_frac
-    zs = [_mpp_z(w, d, t, p) / o for (d, t, p, _), o in zip(layers, open_frac)]
+    if leaf == 'exact':
+        zs = [_mpp_z_exact(w, d, t, p, t_end_factor * d) / o for (d, t, p, _), o in zip(layers, open_frac)]
+    else:
+        zs = [_mpp_z(w, d, t, p) / o for (d, t, p, _), o in zip(layers, open_frac)]
     gaps = [g for _, _, _, g in layers]
 
     # Impedance from the rigid back toward the front face.
@@ -90,7 +108,7 @@ def stack_field(f, layers, open_frac=None):
     return {'alpha': alpha, 'refl': refl, 'share': np.array(share), 'cav': cav}
 
 
-def double_mpp(f, layers, open_frac=None):
+def double_mpp(f, layers, open_frac=None, **kw):
     """Two (or more) MPP leaves in series. Returns (alpha, reflection coefficient)."""
-    out = stack_field(f, layers, open_frac)
+    out = stack_field(f, layers, open_frac, **kw)
     return out['alpha'], out['refl']

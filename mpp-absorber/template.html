@@ -120,7 +120,7 @@
     </table>
     <p class="note">Why two leaves: one perforated plate gives a narrow peak. Two leaves with different hole spacing
        stagger their resonances, which spreads the absorption across the band. In the model the rear leaf takes about
-       33% of the incident energy across the band and the front leaf about 23%.</p>
+       36% of the incident energy across the band and the front leaf about 29%.</p>
   </div>
 
   <div class="card">
@@ -201,11 +201,11 @@
   <div class="card">
     <h2>Limits of this proof of concept</h2>
     <ul>
-      <li>The curves come from the Maa (1998) micro-perforated-panel model at normal incidence. The 3D view shows that 1-D field, not a full 3-D simulation of the holes.</li>
-      <li>The band average is about 0.56, with dips near 300 Hz and above 2.5 kHz. A realistic target is a broad mid-band absorber, not a flat 1.0 across 300&ndash;3000 Hz. Filling the edges needs a deeper cavity or a third leaf.</li>
+      <li>The curves use the exact viscous tube (Bessel) impedance of each hole at normal incidence, with an end correction of 0.85&nbsp;d. The older Maa (1998) fit gave 0.56 and is kept for comparison. The 3D view shows the 1-D field, not a full 3-D simulation of the hole mouths.</li>
+      <li>The band average is about 0.65, with dips near 300 Hz and above 2.5 kHz. A realistic target is a broad mid-band absorber, not a flat 1.0 across 300&ndash;3000 Hz. Filling the edges needs a deeper cavity or a third leaf.</li>
       <li>0.5 mm holes are at the limit of a 0.4 mm nozzle. Print a test strip first and measure the real hole diameter.</li>
-      <li>About 14% of the front-leaf holes and 19% of the rear-leaf holes sit on a rib and are blocked. The model ignores this; with them removed the band average stays at about 0.56, but that is wasted area.</li>
-      <li>The model has no end correction. Adding about 0.85&nbsp;d (0.4 mm) to the plate thickness raises the band average to about 0.58, so the true value is uncertain by a few hundredths.</li>
+      <li>About 14% of the front-leaf holes and 19% of the rear-leaf holes sit on a rib and are blocked. The model ignores this; with them removed the band average drops only to about 0.64, but that is wasted area.</li>
+      <li>The end correction (0.85&nbsp;d) is a standard value, not measured here. Changing it by ±0.4&nbsp;d moves the band average by a few hundredths.</li>
       <li>Validate before trusting the numbers: test a printed coupon in an impedance tube (ASTM E1050 or ISO 10534-2).</li>
     </ul>
   </div>

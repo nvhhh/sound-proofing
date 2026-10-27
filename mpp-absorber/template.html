@@ -124,6 +124,81 @@
   </div>
 
   <div class="card">
+    <h2>Stackable tile and mounting (from tile.py)</h2>
+    <p class="note">Left: four tiles seen from the back, tiles butt edge to edge. Right: side section through one corner.</p>
+    <svg viewBox="0 0 640 300" width="100%" role="img" aria-label="Tile back view and corner section with mounting details" style="display:block;margin-top:8px">
+      <style>
+        .tile { fill: var(--card); stroke: var(--fg); stroke-width: 1.2; }
+        .boss { fill: var(--line); }
+        .csk { fill: none; stroke: var(--muted); stroke-width: 1.2; }
+        .scr { fill: var(--fg); }
+        .dow { fill: var(--accent); }
+        .lbl { font: 11px system-ui, sans-serif; fill: var(--muted); }
+        .lbl2 { font: 12px system-ui, sans-serif; fill: var(--fg); }
+        .leaf { fill: var(--muted); }
+        .cav { fill: var(--bg); stroke: var(--line); }
+        .back { fill: var(--line); stroke: var(--fg); stroke-width: 0.8; }
+      </style>
+      <!-- back view: 2 x 2 tiles, 108 mm each at 1.3 px/mm -->
+      <g transform="translate(24,40) scale(0.85)">
+        <rect class="tile" x="0" y="0" width="140.4" height="140.4"/>
+        <rect class="tile" x="140.4" y="0" width="140.4" height="140.4"/>
+        <rect class="tile" x="0" y="140.4" width="140.4" height="140.4"/>
+        <rect class="tile" x="140.4" y="140.4" width="140.4" height="140.4"/>
+        <!-- corner bosses and countersunk M3 screw holes -->
+        <rect class="boss" x="0" y="0" width="10.4" height="10.4"/><rect class="boss" x="130" y="0" width="10.4" height="10.4"/>
+        <rect class="boss" x="0" y="130" width="10.4" height="10.4"/><rect class="boss" x="130" y="130" width="10.4" height="10.4"/>
+        <rect class="boss" x="140.4" y="0" width="10.4" height="10.4"/><rect class="boss" x="270.4" y="0" width="10.4" height="10.4"/>
+        <rect class="boss" x="140.4" y="130" width="10.4" height="10.4"/><rect class="boss" x="270.4" y="130" width="10.4" height="10.4"/>
+        <rect class="boss" x="0" y="140.4" width="10.4" height="10.4"/><rect class="boss" x="130" y="140.4" width="10.4" height="10.4"/>
+        <rect class="boss" x="0" y="270.4" width="10.4" height="10.4"/><rect class="boss" x="130" y="270.4" width="10.4" height="10.4"/>
+        <rect class="boss" x="140.4" y="140.4" width="10.4" height="10.4"/><rect class="boss" x="270.4" y="140.4" width="10.4" height="10.4"/>
+        <rect class="boss" x="140.4" y="270.4" width="10.4" height="10.4"/><rect class="boss" x="270.4" y="270.4" width="10.4" height="10.4"/>
+        <g class="csk">
+          <circle cx="5.2" cy="5.2" r="4.2"/><circle cx="135.2" cy="5.2" r="4.2"/><circle cx="145.6" cy="5.2" r="4.2"/><circle cx="275.6" cy="5.2" r="4.2"/>
+          <circle cx="5.2" cy="145.6" r="4.2"/><circle cx="135.2" cy="145.6" r="4.2"/><circle cx="145.6" cy="145.6" r="4.2"/><circle cx="275.6" cy="145.6" r="4.2"/>
+          <circle cx="5.2" cy="275.6" r="4.2"/><circle cx="135.2" cy="275.6" r="4.2"/><circle cx="145.6" cy="275.6" r="4.2"/><circle cx="275.6" cy="275.6" r="4.2"/>
+        </g>
+        <!-- dowel pins across the seams (3 mm rod, 6 mm into each tile) -->
+        <rect class="dow" x="132.6" y="33" width="15.6" height="4.2"/><rect class="dow" x="132.6" y="103.2" width="15.6" height="4.2"/>
+        <rect class="dow" x="132.6" y="173.4" width="15.6" height="4.2"/><rect class="dow" x="132.6" y="243.6" width="15.6" height="4.2"/>
+        <rect class="dow" x="33" y="132.6" width="4.2" height="15.6"/><rect class="dow" x="103.2" y="132.6" width="4.2" height="15.6"/>
+        <rect class="dow" x="173.4" y="132.6" width="4.2" height="15.6"/><rect class="dow" x="243.6" y="132.6" width="4.2" height="15.6"/>
+        <text class="lbl" x="0" y="296">tape: flat back, no holes</text>
+      </g>
+      <text class="lbl2" x="24" y="30">back view (sound side is away from you)</text>
+
+      <!-- side section through a corner: front (sound side) on the left -->
+      <g transform="translate(350,60)">
+        <text class="lbl" x="0" y="-8">front (sound side)</text>
+        <rect class="leaf" x="0" y="0" width="3" height="110"/>
+        <rect class="cav" x="3" y="0" width="85" height="110"/>
+        <text class="lbl" x="8" y="52">air gap 1</text><text class="lbl" x="8" y="66">25 mm</text>
+        <rect class="leaf" x="88" y="0" width="3" height="110"/>
+        <rect class="cav" x="91" y="0" width="85" height="110"/>
+        <text class="lbl" x="99" y="52">air gap 2</text><text class="lbl" x="99" y="66">25 mm</text>
+        <rect class="back" x="176" y="0" width="17" height="110"/>
+        <text class="lbl" x="150" y="-8">back 5 mm</text>
+        <!-- corner bosses run the full depth -->
+        <rect class="boss" x="0" y="0" width="193" height="14"/>
+        <rect class="boss" x="0" y="96" width="193" height="14"/>
+        <!-- screw axis through the boss, countersunk on the back face -->
+        <line x1="0" y1="7" x2="176" y2="7" stroke="var(--fg)" stroke-dasharray="4 3" stroke-width="1.2"/>
+        <polygon points="193,0 193,14 183,7" fill="var(--muted)"/>
+        <text class="lbl" x="0" y="130">corner boss 8 mm, M3 screw</text>
+        <text class="lbl" x="0" y="144">depth 56.6 mm: 0.8 + 25 + 0.8 + 25 + 5</text>
+      </g>
+    </svg>
+    <table style="margin-top:10px">
+      <tr><th>Tile size</th><td>cells &times; 18 mm: 108 mm at the default 6 cells; 220 mm bed gives 11 cells (198 mm)</td></tr>
+      <tr><th>Stacking</th><td>tiles butt edge to edge; two 3 mm dowels per seam (about 6 mm into each tile) align them</td></tr>
+      <tr><th>Screws</th><td>four countersunk M3 holes in the 8 mm corner bosses, countersunk from the back face (6.5 mm head)</td></tr>
+      <tr><th>Tape</th><td>the flat back carries no holes; use it for double-sided tape or a wall pad</td></tr>
+      <tr><th>Holes</th><td>0.5 mm holes sit half a pitch from each rib; holes under a boss are dropped (9 front and 1 rear per corner)</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
     <h2>Limits of this proof of concept</h2>
     <ul>
       <li>The curves come from the Maa (1998) micro-perforated-panel model at normal incidence. The 3D view shows that 1-D field, not a full 3-D simulation of the holes.</li>

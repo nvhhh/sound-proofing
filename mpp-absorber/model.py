@@ -77,7 +77,7 @@ def _line_load(Z_T, k0, gap):
     return RHOC * (Z_T + 1j * RHOC * tn) / (RHOC + 1j * Z_T * tn)
 
 
-def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.68, neck=None):
+def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.68, neck=None, plate_mass=None):
     """Field and energy split through MPP leaves in series, each with its own air gap.
 
     layers     list of (d, t, pitch, gap) from the front face to the rigid back;
@@ -104,6 +104,8 @@ def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.68, neck
     else:
         zs = [_mpp_z(w, d, t, p) / o for (d, t, p, _), o in zip(layers, open_frac)]
     gaps = [g for _, _, _, g in layers]
+    if plate_mass is not None:       # areal mass (kg/m^2) of each unsupported leaf; adds w*m to its impedance
+        zs = [z + 1j * w * m for z, m in zip(zs, plate_mass)]
 
     # Impedance from the back toward the front face. The rear cavity ends in a rigid wall,
     # or in a neck (Helmholtz) if neck=dict(r=, length=, cell=) is given.

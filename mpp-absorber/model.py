@@ -130,7 +130,13 @@ def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.68, neck
         e_in = np.exp(-1j * k0 * gap)
         e_out = np.exp(1j * k0 * gap)
         p, u = P * e_in + Q * e_out, (P * e_in - Q * e_out) / RHOC
-    return {'alpha': alpha, 'refl': refl, 'share': np.array(share), 'cav': cav}
+    # Power leaving through a neck goes into the wall space behind the tile; it is counted
+    # as absorbed (the wall space is assumed to take it up, not return it to the room).
+    neck_share = np.zeros_like(alpha)
+    if neck is not None:
+        Zn = neck_z(w, neck['r'], neck['length'], neck['cell'], t_end_factor)
+        neck_share = Zn.real * np.abs(u) ** 2 * RHOC
+    return {'alpha': alpha, 'refl': refl, 'share': np.array(share), 'cav': cav, 'neck_share': neck_share}
 
 
 def double_mpp(f, layers, open_frac=None, **kw):

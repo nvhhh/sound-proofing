@@ -71,5 +71,6 @@ def test_neck_energy_balance():
     neck = dict(r=2e-3, length=5e-3, cell=20e-3)
     layers = [(0.5e-3, 1e-3, 2.5e-3, 25e-3), (0.5e-3, 1e-3, 5e-3, 60e-3)]
     out = stack_field(F, layers, neck=neck)
-    assert np.max(np.abs(out['share'].sum(0) - out['alpha'])) < 1e-12
+    total = out['share'].sum(0) + out['neck_share']
+    assert np.max(np.abs(total - out['alpha'])) < 1e-12
     assert np.all((out['alpha'] >= 0) & (out['alpha'] <= 1 + 1e-12))

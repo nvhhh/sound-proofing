@@ -85,3 +85,5 @@ A studio target of 0.3–0.4 s at 500 Hz to 2 kHz needs about 30 m² of tile on 
 | Necked, 60 mm, 5 mm bore × 5 mm | 92 mm | 0.59 | 0.51 |
 
 Necks trade mid-band absorption for low-end absorption at the same depth. At 100 mm rigid depth, the rigid cavity (0.57 at 120–250 Hz) beats the neck; the necks are for when the depth is limited to about 60 mm. Modelled with the exact tube impedance for the neck (`neck_z` in `model.py`), a resonance-broadened Helmholtz check; not measured.
+
+Energy: the neck's power goes into the wall space behind the tile, and the model counts it as absorbed (about 3% of the band energy). That assumes the wall space takes up the sound and does not return it to the room. A sealed or reflective back would change this.

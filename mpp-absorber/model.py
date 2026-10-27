@@ -58,12 +58,32 @@ def _mpp_z(w, d, t, pitch):
     return r + 1j * x
 
 
-def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.68):
+def neck_z(w, r, length, cell, t_end_factor=0.68):
+    """Specific impedance on one cell of a single neck (tube of radius r, length), with viscous loss.
+
+    The neck has area Sn = pi r^2 in a cell of area Sc = cell^2; sigma = Sn / Sc. Gives the
+    Helmholtz mass term and the viscous resistance of the neck, per unit cell area.
+    """
+    sigma = np.pi * r**2 / cell**2
+    d = 2 * r
+    kap = (d / 2) * np.sqrt(-1j * w * RHO / MU)
+    F = 1 - 2 * jv(1, kap) / (kap * jv(0, kap))
+    return 1j * w * RHO * (length + t_end_factor * d) / sigma / F
+
+
+def _line_load(Z_T, k0, gap):
+    """Impedance at the top of a cavity of depth gap, terminated by Z_T at its bottom."""
+    tn = np.tan(k0 * gap)
+    return RHOC * (Z_T + 1j * RHOC * tn) / (RHOC + 1j * Z_T * tn)
+
+
+def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.68, neck=None):
     """Field and energy split through MPP leaves in series, each with its own air gap.
 
     layers     list of (d, t, pitch, gap) from the front face to the rigid back;
                gap is the cavity behind that leaf.
     leaf       'exact' (Bessel tube, default) or 'maa98' (Maa 1998 fit, no end correction)
+    neck       None (rigid back) or dict(r, length, cell) for a Helmholtz neck in the back wall
     t_end_factor  end correction as a multiple of the hole diameter. 0.68 is calibrated to a
                2-D resolved Stokes simulation of one hole (0.66-0.70 d); the common 0.85 d overestimates it
     open_frac  per-leaf fraction of holes that open into the cavity (None = all).
@@ -85,8 +105,12 @@ def stack_field(f, layers, open_frac=None, leaf='exact', t_end_factor=0.68):
         zs = [_mpp_z(w, d, t, p) / o for (d, t, p, _), o in zip(layers, open_frac)]
     gaps = [g for _, _, _, g in layers]
 
-    # Impedance from the rigid back toward the front face.
-    z_load = zs[-1] + (-1j * RHOC / np.tan(k0 * gaps[-1]))
+    # Impedance from the back toward the front face. The rear cavity ends in a rigid wall,
+    # or in a neck (Helmholtz) if neck=dict(r=, length=, cell=) is given.
+    if neck is None:
+        z_load = zs[-1] + (-1j * RHOC / np.tan(k0 * gaps[-1]))
+    else:
+        z_load = zs[-1] + _line_load(neck_z(w, neck['r'], neck['length'], neck['cell'], t_end_factor), k0, gaps[-1])
     for z, gap in zip(reversed(zs[:-1]), reversed(gaps[:-1])):
         tn = np.tan(k0 * gap)
         z_load = z + RHOC * (z_load + 1j * RHOC * tn) / (RHOC + 1j * z_load * tn)

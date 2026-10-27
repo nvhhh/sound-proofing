@@ -9,13 +9,17 @@ from geometry import hole_axis, rib_centres, min_web
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 # Design (see tile.py / README): best printable design found by the parameter search.
-GEOM = dict(hole_mm=0.5, t_mm=1.0, p1_mm=2.5, p2_mm=5.0, g1_mm=25.0, g2_mm=30.0,
-            cell_mm=20.0, back_mm=5.0, width_mm=120.0, rib_t_mm=1.2)
+GEOM = dict(hole_mm=0.5, t_mm=1.0, p1_mm=2.5, p2_mm=5.0, g1_mm=25.0, g2_mm=60.0,
+            cell_mm=20.0, back_mm=5.0, width_mm=120.0, rib_t_mm=1.2,
+            neck_bore_mm=4.0, neck_len_mm=5.0)   # Helmholtz neck in each rear cell's back wall
 HOLE = GEOM['hole_mm'] * 1e-3
 T = GEOM['t_mm'] * 1e-3
 GAPS = (GEOM['g1_mm'] * 1e-3, GEOM['g2_mm'] * 1e-3)
 PITCHES = (GEOM['p1_mm'] * 1e-3, GEOM['p2_mm'] * 1e-3)      # front leaf, rear leaf
 LAYERS = [(HOLE, T, PITCHES[0], GAPS[0]), (HOLE, T, PITCHES[1], GAPS[1])]
+NECK = dict(r=GEOM['neck_bore_mm'] / 2e3, length=GEOM['neck_len_mm'] * 1e-3, cell=GEOM['cell_mm'] * 1e-3)
+# Reference: the previous rigid-backed design (30 mm rear cavity, no neck)
+LAYERS_RIGID = [(HOLE, T, PITCHES[0], GAPS[0]), (HOLE, T, PITCHES[1], 30e-3)]
 
 W = GEOM['width_mm']
 AX1 = hole_axis(W, GEOM['p1_mm'], GEOM['cell_mm'], GEOM['rib_t_mm'], GEOM['hole_mm'] / 2)
@@ -27,10 +31,19 @@ open_frac = [1.0, 1.0]        # holes are placed clear of ribs, so none are bloc
 
 
 f = np.geomspace(300, 3000, 240)
-field = stack_field(f, LAYERS)
+FLOW = np.geomspace(80, 3000, 300)          # wider grid for the 120-250 Hz figure
+
+
+def low_band(neck):
+    layers = LAYERS if neck else LAYERS_RIGID
+    a = stack_field(FLOW, layers, neck=NECK if neck else None)['alpha']
+    return float(a[(FLOW >= 120) & (FLOW <= 250)].mean())
+
+
+NECK_LAYERS_FIELD = True
+field = stack_field(f, LAYERS, neck=NECK)
 alpha, refl = field['alpha'], field['refl']
-built = stack_field(f, LAYERS, open_frac)
-alpha_built = built['alpha']
+alpha_built = stack_field(f, LAYERS_RIGID)['alpha']   # previous rigid design, dashed on the chart
 
 print('holes front %d rear %d, min web to rib %.2f mm' % (len(AX1) ** 2, len(AX2) ** 2, MIN_WEB))
 print('plate-mode check (leaf cell, first mode Hz):', plate_modes(GEOM['cell_mm'] * 1e-3, GEOM['cell_mm'] * 1e-3, T)[0][0])
@@ -63,6 +76,9 @@ data = {
     'axis2': rnd(AX2, 3),
     'ribs': rnd(RIBS, 3),
     'mean_built': round(band_mean(alpha_built, f), 3),
+    'low_band': round(low_band(NECK_LAYERS_FIELD), 3),
+    'low_band_built': round(low_band(None), 3),
+    'neck': GEOM['neck_bore_mm'],
 }
 with open(os.path.join(HERE, 'data.json'), 'w') as fh:
     json.dump(data, fh)

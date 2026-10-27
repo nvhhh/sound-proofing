@@ -102,7 +102,7 @@
   <div class="card">
     <h2>Absorption across the band</h2>
     <canvas id="chart"></canvas>
-    <p class="note">Solid: model. Dashed: as built. The two coincide because no hole touches a rib.</p>
+    <p class="note">Solid: necked rear cells (60 mm cavity, 4 mm bores). Dashed: previous rigid design (30 mm rear cavity, no necks).</p>
     <p class="note" id="summary"></p>
   </div>
 
@@ -110,11 +110,11 @@
     <h2>Design (what gets printed)</h2>
     <table>
       <tr><th>Material</th><td>PLA, PETG or ABS (nylon's leaf mode falls into the band; see README)</td></tr>
-      <tr><th>Coupon</th><td>120 &times; 120 mm, 62 mm deep</td></tr>
+      <tr><th>Coupon</th><td>120 &times; 120 mm, 92 mm deep (incl. 5 mm back)</td></tr>
       <tr><th>Front leaf</th><td>1.0 mm thick, 0.5 mm holes on a 2.5 mm pitch (2209 holes, &sigma;&nbsp;&asymp;&nbsp;3.1%)</td></tr>
       <tr><th>Air gap 1</th><td>25 mm, divided by 1.2 mm ribs on a 20 mm grid</td></tr>
       <tr><th>Rear leaf</th><td>1.0 mm thick, 0.5 mm holes on a 5 mm pitch (576 holes, &sigma;&nbsp;&asymp;&nbsp;0.8%)</td></tr>
-      <tr><th>Air gap 2</th><td>30 mm, same ribbed grid</td></tr>
+      <tr><th>Air gap 2</th><td>60 mm, same ribbed grid. Each 20 mm cell ends in a 4 mm bore, 5 mm long neck through the back wall (Helmholtz, tuned to about 120–250 Hz)</td></tr>
       <tr><th>Back wall</th><td>5 mm solid (dowel sockets and screw bosses)</td></tr>
       <tr><th>Print</th><td>0.4 mm nozzle, 0.1 mm layers, front leaf on the bed, 3 perimeters, no top/bottom gaps in the leaves. Drill-check the 0.5 mm holes; a 0.4 mm wall separates every hole from a rib.</td></tr>
     </table>
@@ -291,6 +291,17 @@ addRibs(cav2Part, (Z.gap2 + Z.back) / 2, Z.gap2 - Z.back);
 scene.add(cav1Part, cav2Part);
 const back = new THREE.Mesh(new THREE.BoxGeometry(SIZE, SIZE, Z.end - Z.back), ribMat);
 back.position.set(SIZE / 2, SIZE / 2, (Z.back + Z.end) / 2);
+// Helmholtz necks: one per rear cell, through the back wall (children of the back so they move with it)
+const neckGeo = new THREE.CylinderGeometry(stepMM(D.geom.neck_bore_mm / 2), stepMM(D.geom.neck_bore_mm / 2), stepMM(D.geom.neck_len_mm), 12);
+neckGeo.rotateX(Math.PI / 2);
+const neckMat = new THREE.MeshStandardMaterial({ color: 0x6f7780, roughness: 0.6 });
+const nCells = Math.round(SIZE / stepMM(D.geom.cell_mm));
+for (let i = 0; i < nCells; i++) for (let j = 0; j < nCells; j++) {
+  const n = new THREE.Mesh(neckGeo, neckMat);
+  n.position.set(stepMM((i + 0.5) * D.geom.cell_mm) - SIZE / 2, stepMM((j + 0.5) * D.geom.cell_mm) - SIZE / 2,
+                 (Z.end - Z.back) / 2 - stepMM(D.geom.neck_len_mm) / 2);
+  back.add(n);
+}
 scene.add(back);
 
 // Air-flow tint on the front face: red = air pushed into the holes, blue = pulled out.
@@ -425,8 +436,8 @@ function drawChart() {
   ctx.beginPath(); ctx.arc(x(D.f[idx]), y(D.alpha[idx]), 4, 0, Math.PI * 2); ctx.fill();
 }
 document.getElementById('summary').textContent =
-  'Mean absorption over 300–3000 Hz: ' + D.mean.toFixed(2) + ' (ideal). With the holes on ribs removed: ' +
-  D.mean_built.toFixed(2) + '. Weakest near 300 Hz and above 2.5 kHz.';
+  'Necked design: mean absorption 300–3000 Hz ' + D.mean.toFixed(2) + ', 120–250 Hz ' + D.low_band.toFixed(2) +
+  '. Previous rigid design: ' + D.mean_built.toFixed(2) + ' and ' + D.low_band_built.toFixed(2) + '.';
 
 // ----- controls ------------------------------------------------------------
 const slider = document.getElementById('freq');

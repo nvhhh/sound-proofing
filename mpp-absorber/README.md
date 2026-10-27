@@ -1,7 +1,7 @@
 # Micro-perforated sound absorber (300–3000 Hz)
 
 A single-material, 3D-printable absorber: two perforated leaves, each with an air cavity behind it.
-Best printable design found so far: 120 × 120 × 62 mm coupon, PLA, PETG or ABS.
+Best printable design found so far: 120 × 120 × 92 mm coupon, PLA, PETG or ABS.
 
 ## Files
 - `model.py`: micro-perforated panel model at normal incidence. Default leaf impedance is the exact viscous tube (Bessel) with an end correction of 0.68 d. `leaf='maa98'` gives the older Maa (1998) fit. `stack_field` returns absorption, reflection, the energy split per leaf and the field inside each cavity.
@@ -17,9 +17,11 @@ Best printable design found so far: 120 × 120 × 62 mm coupon, PLA, PETG or ABS
 ## Best design
 | | Front leaf | Air gap 1 | Rear leaf | Air gap 2 | Back |
 |---|---|---|---|---|---|
-| Thickness / size | 1.0 mm | 25 mm | 1.0 mm | 30 mm | 5 mm |
+| Thickness / size | 1.0 mm | 25 mm | 1.0 mm | 60 mm (see neck) | 5 mm |
 | Holes | 0.5 mm on 2.5 mm pitch, 2209 | ribs 1.2 mm on 20 mm | 0.5 mm on 5 mm pitch, 576 | ribs 1.2 mm on 20 mm | solid |
 | Perforation ratio σ | 3.1% | | 0.8% | | |
+
+Rear cells are necked: each 20 mm cell ends in a 4 mm bore, 5 mm long neck through the back wall (Helmholtz resonator). The coupon is 120 × 120 × 92 mm.
 
 Rule for printability: holes ≥ 0.5 mm (0.4 mm nozzle), leaves 1.0 mm (three perimeters), pitch a divisor of the 20 mm rib cell, at least 0.4 mm of wall between every hole and every rib.
 
@@ -73,3 +75,13 @@ A studio target of 0.3–0.4 s at 500 Hz to 2 kHz needs about 30 m² of tile on 
 - Solid PLA weight: about 1.0 kg per 240 mm tile (0.27 kg for 120 mm, solid print volume before infill). Use screws, not tape, for the larger tile.
 - Room estimate: the model is per unit area, so the Sabine times do not change with tile size. Living room 6 m² (104 tiles): 0.29 s at 500 Hz. Studio 12 m² (208 tiles): 0.68 s; 30 m² (521 tiles): 0.47 s.
 - Not captured by the 1-D model: edge diffraction and tile-to-tile seams. These matter more for the larger tile, and need an impedance-tube test of a 240 mm sample (or a 100 mm tube with a 120 mm sample) to check.
+
+## Necked rear cells (low end, 60 mm rear cavity)
+| Rear design | Depth | 120–250 Hz α | 300–3000 Hz mean α |
+|---|---|---|---|
+| Rigid back, 30 mm | 62 mm | 0.08 | 0.66 |
+| Rigid back, 60 mm | 92 mm | 0.27 | 0.64 |
+| Necked, 60 mm, 4 mm bore × 5 mm (**bench design**) | 92 mm | 0.51 | 0.53 |
+| Necked, 60 mm, 5 mm bore × 5 mm | 92 mm | 0.59 | 0.51 |
+
+Necks trade mid-band absorption for low-end absorption at the same depth. At 100 mm rigid depth, the rigid cavity (0.57 at 120–250 Hz) beats the neck; the necks are for when the depth is limited to about 60 mm. Modelled with the exact tube impedance for the neck (`neck_z` in `model.py`), a resonance-broadened Helmholtz check; not measured.

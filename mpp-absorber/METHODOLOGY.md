@@ -25,6 +25,9 @@ Each product is sampled over end correction 0.60–0.85 d and every cavity depth
 - Result: parameter uncertainty moves the mean by under 0.01. The worst-band value is more sensitive, and P2's worst band falls to 0.03 at the 5th percentile.
 - This underestimates real uncertainty, because model-form errors (slot model, neck wall space, foam resistivity) are not sampled. Model-form uncertainty is the larger risk, and it is reported separately.
 
+## 3b. Band definitions
+Targets are scored on the linear band they name (for example 125–250 Hz, 500–4000 Hz), not on octave bins. An octave bin for 125 Hz spans about 88–177 Hz, which mixes in frequencies outside the target. This changed the bass face from 0.80 to 0.64 in the same model.
+
 ## 4. Design optimisation (`products.py`, `geometry.py`)
 - Objective: maximise the worst octave band over the target range first, then the mean. A mean-only objective hides dead bands and picked four bass traps for the 240 mm bed.
 - Constraints: holes ≥ 0.5 mm, leaves 0.8–1.2 mm, pitch divides the 20 mm rib cell, ≥ 0.4 mm web, depth limits.

@@ -48,6 +48,11 @@
         <option value="living">Living room, 5 × 4 × 2.5 m</option>
         <option value="studio">Studio, 6 × 5 × 3 m</option>
       </select>
+      <label for="tsize" class="muted">Tile</label>
+      <select id="tsize">
+        <option value="0.12">120 × 120 mm</option>
+        <option value="0.24">240 × 240 mm</option>
+      </select>
       <label for="cov" class="muted">Tiled wall area</label>
       <input id="cov" type="range" min="0" max="30" step="0.5" value="6">
       <span id="covv"></span>
@@ -103,8 +108,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const BANDS = [125, 250, 500, 1000, 2000, 4000];
 const TILE = { 125: 0.20, 250: 0.35, 500: 0.81, 1000: 0.65, 2000: 0.64, 4000: 0.26 };   // model band averages, 125/4k assumed
 const DIFFUSE = 0.8;
-const TILE_M2 = 0.12 * 0.12;                                 // tile face area, m^2
-const SPACING = 0.14;                                        // 120 mm tile + 20 mm gap
+let TILE_SIDE = 0.12;                                       // tile face size, m (120 or 240 mm)
+let TILE_M2 = TILE_SIDE * TILE_SIDE;                         // tile face area, m^2
+let SPACING = TILE_SIDE + 0.02;                              // tile + 20 mm gap
 const ROOMS = {
   living: { dims: [5.0, 4.0, 2.5], base: [0.20, 0.25, 0.30, 0.35, 0.40, 0.40] },
   studio: { dims: [6.0, 5.0, 3.0], base: [0.10, 0.10, 0.12, 0.15, 0.18, 0.20] },
@@ -137,7 +143,7 @@ controls.enableDamping = true;
 scene.add(new THREE.AmbientLight(0xffffff, 0.8));
 const sun = new THREE.DirectionalLight(0xffffff, 0.7); sun.position.set(4, 8, 6); scene.add(sun);
 const roomGroup = new THREE.Group(); scene.add(roomGroup);
-const tileGeo = new THREE.BoxGeometry(0.12, 0.12, 0.062);
+let tileGeo = new THREE.BoxGeometry(TILE_SIDE, TILE_SIDE, 0.062);
 const tileMat = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.7 });
 let tileMesh = null;
 
@@ -172,6 +178,7 @@ function wallSlots(r) {
 }
 function placeTiles(r, n) {
   if (tileMesh) { roomGroup.remove(tileMesh); tileMesh.dispose(); tileMesh = null; }
+  tileGeo.dispose(); tileGeo = new THREE.BoxGeometry(TILE_SIDE, TILE_SIDE, 0.062);
   const slots = wallSlots(r), m = Math.min(n, slots.length);
   tileMesh = new THREE.InstancedMesh(tileGeo, tileMat, m);
   const M = new THREE.Matrix4(), q = new THREE.Quaternion(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 0, 1);
@@ -224,6 +231,7 @@ function drawDecay() {
 // ----- readouts -----
 function update() {
   const r = ROOMS[pick.value], n = Math.round(+cov.value / TILE_M2);
+  // tile absorption is the same per m^2; a 240 mm tile is 12 cells, so the rib grid still fits
   const area = +cov.value;
   $('covv').textContent = area.toFixed(1) + ' m²';
   const placed = placeTiles(r, n);
@@ -248,6 +256,10 @@ pick.addEventListener('change', () => {
   update();
 });
 cov.addEventListener('input', update);
+$('tsize').addEventListener('change', (e) => {
+  TILE_SIDE = +e.target.value; TILE_M2 = TILE_SIDE * TILE_SIDE; SPACING = TILE_SIDE + 0.02;
+  update();
+});
 
 buildRoom(ROOMS[pick.value]);
 resize();

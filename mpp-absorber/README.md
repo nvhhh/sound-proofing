@@ -66,3 +66,10 @@ Sabine estimate, tiles on the walls, 0.8 diffuse correction, untreated absorptio
 | Studio 6 × 5 × 3 m | 12 m² | 833 | 0.96 → 0.68 s | 0.77 → 0.62 s |
 
 A studio target of 0.3–0.4 s at 500 Hz to 2 kHz needs about 30 m² of tile on this estimate. Low frequencies (125–250 Hz) need bass traps; 62 mm tiles do little there.
+
+### 240 × 240 mm tiles
+- Geometry: `python3 tile.py --cells 12` builds a 240 × 240 × 62 mm tile, watertight. The rib grid (20 mm cells) and hole layout are the same, so the leaf and wall modes are unchanged.
+- Holes per tile: 9025 front, 2304 rear (vs. 2209 and 576 for 120 mm).
+- Solid PLA weight: about 1.0 kg per 240 mm tile (0.27 kg for 120 mm, solid print volume before infill). Use screws, not tape, for the larger tile.
+- Room estimate: the model is per unit area, so the Sabine times do not change with tile size. Living room 6 m² (104 tiles): 0.29 s at 500 Hz. Studio 12 m² (208 tiles): 0.68 s; 30 m² (521 tiles): 0.47 s.
+- Not captured by the 1-D model: edge diffraction and tile-to-tile seams. These matter more for the larger tile, and need an impedance-tube test of a 240 mm sample (or a 100 mm tube with a 120 mm sample) to check.

@@ -71,6 +71,51 @@ def neck_z(w, r, length, cell, t_end_factor=0.68):
     return 1j * w * RHO * (length + t_end_factor * d) / sigma / F
 
 
+def slit_branch_z(w, h, span, length, cell, D, pr=0.71, gamma=1.4):
+    """Specific impedance on one cell of a slot (gap h, span) into a closed cavity of depth D.
+
+    Wide-slit thermoviscous duct (Stinson / Allard form, the approach used in the
+    engineering report): the viscous and thermal penetration functions give the effective
+    density and bulk modulus of the slot air. Edge impedance uses the isolated-slit end
+    correction. Slot air area h*span is a fraction phi of the cell area.
+    """
+    Fv_of = lambda x: np.tanh(x) / x
+    def fv_ft(x):
+        q = (x / 2) * np.sqrt(1j * w * RHO / MU)
+        return Fv_of(q), np.tanh(q * np.sqrt(pr)) / (q * np.sqrt(pr))
+    Fvh, Fth = fv_ft(h)
+    Fvb, Ftb = fv_ft(span)
+    Fv = Fvh + Fvb - Fvh * Fvb
+    Ft = Fth + Ftb - Fth * Ftb
+    rho_eff = RHO / (1 - Fv)
+    K = RHO * C**2 / (1 + (gamma - 1) * Ft)
+    Zc = np.sqrt(rho_eff * K)
+    keff = w * np.sqrt(rho_eff / K)
+    phi = h * span / cell**2
+    k0 = w / C
+    Zcav = -1j * RHOC / np.tan(k0 * D)
+    ZL = phi * Zcav
+    t = np.tan(keff * length)
+    Zin = Zc * (ZL + 1j * Zc * t) / (Zc + 1j * ZL * t)
+    delta = (2 * h / np.pi) * np.log(2 * span / h + 0.5)
+    z_edge = 0.5 * np.sqrt(2 * MU * RHO * w) + 1j * w * RHO * delta
+    return Zin / phi + z_edge
+
+
+def slit_absorption(f, slits, D, cell):
+    """Absorption of a face of slot resonators, one type per equal share of the face.
+
+    slits: list of (h, span, length, share) with h, span, length, cell in metres;
+    shares are fractions of the total face area (the rest is solid, admittance zero).
+    """
+    f = np.atleast_1d(np.asarray(f, dtype=float))
+    w = 2 * np.pi * f
+    Y = sum(share / slit_branch_z(w, h, span, L, cell, D) for h, span, L, share in slits)
+    Z = 1 / Y
+    R = (Z - RHOC) / (Z + RHOC)
+    return 1 - np.abs(R) ** 2
+
+
 def _line_load(Z_T, k0, gap):
     """Impedance at the top of a cavity of depth gap, terminated by Z_T at its bottom."""
     tn = np.tan(k0 * gap)

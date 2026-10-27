@@ -19,17 +19,19 @@ import numpy as np
 import trimesh
 from manifold3d import Manifold
 
+from geometry import hole_axis, rib_centres
+
 
 @dataclass(frozen=True)
 class Params:
     cells: int = 6               # rib cells per side; tile width = cells * cell
-    cell: float = 18.0           # rib cell size; must be a multiple of both pitches
-    pitch_front: float = 3.0
-    pitch_rear: float = 6.0
+    cell: float = 20.0           # rib cell size; must be a multiple of both pitches
+    pitch_front: float = 2.5
+    pitch_rear: float = 5.0
     hole_d: float = 0.5
-    t_leaf: float = 0.8          # perforated leaf thickness
+    t_leaf: float = 1.0          # perforated leaf thickness
     gap_front: float = 25.0      # cavity behind the front leaf
-    gap_rear: float = 25.0       # cavity behind the rear leaf
+    gap_rear: float = 30.0       # cavity behind the rear leaf
     rib_t: float = 1.2
     back: float = 5.0            # solid back; thick enough for dowel sockets
     boss: float = 8.0            # corner boss size (screw and tile corner)
@@ -72,14 +74,8 @@ def cyl(r, h, origin, axis="z"):
 
 
 def hole_centres(width, pitch, boss, cell, rib_t, hole_r):
-    """Hole centres on the half-pitch grid, minus boss corners and any blocked by a rib."""
-    n = int(round(width / pitch))
-    c = (np.arange(n) + 0.5) * pitch
-    ribs = np.arange(0, width, cell)
-    # a hole is blocked if it touches a rib (rib centreline +/- rib_t/2)
-    nearest = np.min(np.abs(c[:, None] - ribs[None, :]), axis=1)
-    if np.any(nearest < hole_r + rib_t / 2):
-        raise ValueError("a hole would be blocked by a rib")
+    """Hole centres from the shared geometry, minus those under a corner boss."""
+    c = hole_axis(width, pitch, cell, rib_t, hole_r)
     pts = [(x, y) for x in c for y in c
            if not ((x < boss or x > width - boss) and (y < boss or y > width - boss))]
     return pts
@@ -97,8 +93,8 @@ def leaf(p, pitch, z0, thickness):
 def rib_walls(p, z0, height):
     w = p.width
     parts = []
-    for x in np.arange(0, w, p.cell):
-        x = min(x, w - p.rib_t)
+    for c in rib_centres(w, p.cell, p.rib_t):
+        x = c - p.rib_t / 2
         parts.append(box([p.rib_t, w, height], [x, 0, z0]))
         parts.append(box([w, p.rib_t, height], [0, x, z0]))
     return parts

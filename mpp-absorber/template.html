@@ -102,25 +102,25 @@
   <div class="card">
     <h2>Absorption across the band</h2>
     <canvas id="chart"></canvas>
-    <p class="note">Solid line: ideal model. Dashed: as built, with the holes that sit on a rib removed.</p>
+    <p class="note">Solid: model. Dashed: as built. The two coincide because no hole touches a rib.</p>
     <p class="note" id="summary"></p>
   </div>
 
   <div class="card">
     <h2>Design (what gets printed)</h2>
     <table>
-      <tr><th>Material</th><td>PLA or PETG, single material, one print</td></tr>
-      <tr><th>Coupon</th><td>120 &times; 120 mm, 53.6 mm deep</td></tr>
-      <tr><th>Front leaf</th><td>0.8 mm thick, 0.5 mm holes on a 3 mm grid (1600 holes, &sigma;&nbsp;&asymp;&nbsp;2.2%; 231 of them sit on a rib and are blocked)</td></tr>
+      <tr><th>Material</th><td>PLA, PETG or ABS (nylon's leaf mode falls into the band; see README)</td></tr>
+      <tr><th>Coupon</th><td>120 &times; 120 mm, 62 mm deep</td></tr>
+      <tr><th>Front leaf</th><td>1.0 mm thick, 0.5 mm holes on a 2.5 mm pitch (2209 holes, &sigma;&nbsp;&asymp;&nbsp;3.1%)</td></tr>
       <tr><th>Air gap 1</th><td>25 mm, divided by 1.2 mm ribs on a 20 mm grid</td></tr>
-      <tr><th>Rear leaf</th><td>0.8 mm thick, 0.5 mm holes on a 6 mm grid (400 holes, &sigma;&nbsp;&asymp;&nbsp;0.55%; 76 of them sit on a rib and are blocked)</td></tr>
-      <tr><th>Air gap 2</th><td>25 mm, same ribbed grid</td></tr>
-      <tr><th>Back wall</th><td>2 mm solid</td></tr>
-      <tr><th>Print</th><td>0.4 mm nozzle, 0.1 mm layers, front leaf on the bed, 3 perimeters, no top/bottom gaps in the leaves. Enable hole compensation or drill-check the 0.5 mm holes.</td></tr>
+      <tr><th>Rear leaf</th><td>1.0 mm thick, 0.5 mm holes on a 5 mm pitch (576 holes, &sigma;&nbsp;&asymp;&nbsp;0.8%)</td></tr>
+      <tr><th>Air gap 2</th><td>30 mm, same ribbed grid</td></tr>
+      <tr><th>Back wall</th><td>5 mm solid (dowel sockets and screw bosses)</td></tr>
+      <tr><th>Print</th><td>0.4 mm nozzle, 0.1 mm layers, front leaf on the bed, 3 perimeters, no top/bottom gaps in the leaves. Drill-check the 0.5 mm holes; a 0.4 mm wall separates every hole from a rib.</td></tr>
     </table>
     <p class="note">Why two leaves: one perforated plate gives a narrow peak. Two leaves with different hole spacing
        stagger their resonances, which spreads the absorption across the band. In the model the rear leaf takes about
-       36% of the incident energy across the band and the front leaf about 29%.</p>
+       39% of the incident energy across the band and the front leaf about 27%.</p>
   </div>
 
   <div class="card">
@@ -176,7 +176,7 @@
         <text class="lbl" x="8" y="52">air gap 1</text><text class="lbl" x="8" y="66">25 mm</text>
         <rect class="leaf" x="88" y="0" width="3" height="110"/>
         <rect class="cav" x="91" y="0" width="85" height="110"/>
-        <text class="lbl" x="99" y="52">air gap 2</text><text class="lbl" x="99" y="66">25 mm</text>
+        <text class="lbl" x="99" y="52">air gap 2</text><text class="lbl" x="99" y="66">30 mm</text>
         <rect class="back" x="176" y="0" width="17" height="110"/>
         <text class="lbl" x="150" y="-8">back 5 mm</text>
         <!-- corner bosses run the full depth -->
@@ -186,15 +186,15 @@
         <line x1="0" y1="7" x2="176" y2="7" stroke="var(--fg)" stroke-dasharray="4 3" stroke-width="1.2"/>
         <polygon points="193,0 193,14 183,7" fill="var(--muted)"/>
         <text class="lbl" x="0" y="130">corner boss 8 mm, M3 screw</text>
-        <text class="lbl" x="0" y="144">depth 56.6 mm: 0.8 + 25 + 0.8 + 25 + 5</text>
+        <text class="lbl" x="0" y="144">depth 62 mm: 1.0 + 25 + 1.0 + 30 + 5</text>
       </g>
     </svg>
     <table style="margin-top:10px">
-      <tr><th>Tile size</th><td>cells &times; 18 mm: 108 mm at the default 6 cells; 220 mm bed gives 11 cells (198 mm)</td></tr>
+      <tr><th>Tile size</th><td>cells &times; 20 mm: 120 mm at the default 6 cells; a 220 mm bed takes 10 cells (200 mm)</td></tr>
       <tr><th>Stacking</th><td>tiles butt edge to edge; two 3 mm dowels per seam (about 6 mm into each tile) align them</td></tr>
       <tr><th>Screws</th><td>four countersunk M3 holes in the 8 mm corner bosses, countersunk from the back face (6.5 mm head)</td></tr>
       <tr><th>Tape</th><td>the flat back carries no holes; use it for double-sided tape or a wall pad</td></tr>
-      <tr><th>Holes</th><td>0.5 mm holes sit half a pitch from each rib; holes under a boss are dropped (9 front and 1 rear per corner)</td></tr>
+      <tr><th>Holes</th><td>holes sit midway between rib lines with at least 0.4 mm of wall to each rib; holes under a corner boss are dropped</td></tr>
     </table>
   </div>
 
@@ -202,9 +202,9 @@
     <h2>Limits of this proof of concept</h2>
     <ul>
       <li>The curves use the exact viscous tube (Bessel) impedance of each hole at normal incidence, with an end correction of 0.68&nbsp;d, calibrated to a resolved 2-D simulation of one hole. The older Maa (1998) fit gave 0.56 and is kept for comparison. The 3D view shows the 1-D field, not a full 3-D simulation of the hole mouths.</li>
-      <li>The band average is about 0.65, with dips near 300 Hz and above 2.5 kHz. A realistic target is a broad mid-band absorber, not a flat 1.0 across 300&ndash;3000 Hz. Filling the edges needs a deeper cavity or a third leaf.</li>
+      <li>The band average is about 0.66, with dips near 300 Hz and above 2.5 kHz. A realistic target is a broad mid-band absorber, not a flat 1.0 across 300&ndash;3000 Hz. Filling the edges needs a deeper cavity or a third leaf.</li>
       <li>0.5 mm holes are at the limit of a 0.4 mm nozzle. Print a test strip first and measure the real hole diameter.</li>
-      <li>About 14% of the front-leaf holes and 19% of the rear-leaf holes sit on a rib and are blocked. The model ignores this; with them removed the band average drops only to about 0.64, but that is wasted area.</li>
+      <li>No hole touches a rib: every hole keeps at least 0.4&nbsp;mm of wall to a rib, so the printed holes match the model.</li>
       <li>The end correction (0.68&nbsp;d) comes from a 2-D resolved simulation, not measured here. Changing it by ±0.4&nbsp;d moves the band average by a few hundredths.</li>
       <li>Validate before trusting the numbers: test a printed coupon in an impedance tube (ASTM E1050 or ISO 10534-2).</li>
     </ul>
@@ -246,39 +246,40 @@ scene.add(sun);
 
 const SIZE = 1.2;
 const stepMM = (mm) => mm * 0.01;             // mm -> scene units
-const Z = {                                    // depth stack, z = 0 at front face
-  front: 0.0, gap1: -0.008, leaf2: -0.258, gap2: -0.266, back: -0.516, end: -0.536
-};
+const Z = (() => {                            // depth stack from the design, z = 0 at front face
+  const g = D.geom;
+  const gap1 = -stepMM(g.t_mm), leaf2 = gap1 - stepMM(g.g1_mm), gap2 = leaf2 - stepMM(g.t_mm);
+  return { front: 0, gap1, leaf2, gap2, back: gap2 - stepMM(g.g2_mm), end: gap2 - stepMM(g.g2_mm) - stepMM(g.back_mm) };
+})();
 
-function holedShape(pitchMM) {
+function holedShape(axis) {
+  // axis: hole centres along one edge, in mm; the grid is square
   const shape = new THREE.Shape();
   shape.moveTo(0, 0); shape.lineTo(SIZE, 0); shape.lineTo(SIZE, SIZE); shape.lineTo(0, SIZE);
   shape.lineTo(0, 0);
-  const n = Math.floor(120 / pitchMM);
-  const off = (120 - (n - 1) * pitchMM) / 2;
-  const r = stepMM(0.25);
-  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+  const r = stepMM(D.geom.hole_mm / 2);
+  for (const x of axis) for (const y of axis) {
     const p = new THREE.Path();
-    p.absarc(stepMM(off + i * pitchMM), stepMM(off + j * pitchMM), r, 0, Math.PI * 2, true);
+    p.absarc(stepMM(x), stepMM(y), r, 0, Math.PI * 2, true);
     shape.holes.push(p);
   }
   return shape;
 }
 
 const plateMat = new THREE.MeshStandardMaterial({ color: 0x9aa3ad, roughness: 0.7, side: THREE.DoubleSide });
-const frontPlate = new THREE.Mesh(new THREE.ShapeGeometry(holedShape(3), 6), plateMat);
+const frontPlate = new THREE.Mesh(new THREE.ShapeGeometry(holedShape(D.axis1), 6), plateMat);
 frontPlate.position.z = Z.front;
-const rearPlate = new THREE.Mesh(new THREE.ShapeGeometry(holedShape(6), 6), plateMat);
+const rearPlate = new THREE.Mesh(new THREE.ShapeGeometry(holedShape(D.axis2), 6), plateMat);
 rearPlate.position.z = Z.leaf2;
 scene.add(frontPlate, rearPlate);
 
 const ribMat = new THREE.MeshStandardMaterial({ color: 0xb8bec6, roughness: 0.8, transparent: true, opacity: 0.5, depthWrite: false });
 function addRibs(group, zCenter, height) {
-  for (let i = 0; i <= 6; i++) {
-    const x = i < 6 ? i * stepMM(20) + stepMM(0.6) : SIZE - stepMM(0.6);
-    const a = new THREE.Mesh(new THREE.BoxGeometry(stepMM(1.2), SIZE, height), ribMat);
+  for (const c of D.ribs) {
+    const x = stepMM(c);
+    const a = new THREE.Mesh(new THREE.BoxGeometry(stepMM(D.geom.rib_t_mm), SIZE, height), ribMat);
     a.position.set(x, SIZE / 2, zCenter);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(SIZE, stepMM(1.2), height), ribMat);
+    const b = new THREE.Mesh(new THREE.BoxGeometry(SIZE, stepMM(D.geom.rib_t_mm), height), ribMat);
     b.position.set(SIZE / 2, x, zCenter);
     group.add(a, b);
   }

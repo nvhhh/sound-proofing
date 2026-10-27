@@ -56,3 +56,12 @@ def test_leaf_cell_mode_above_band():
 def test_wall_mode_above_band():
     from structure import plate_modes
     assert plate_modes(0.025, 0.018, 1.2e-3)[0][0] > 3000
+
+
+def test_holes_clear_ribs_with_web():
+    from geometry import hole_axis, min_web
+    for pitch in (2.5, 5.0):
+        a = hole_axis(120, pitch, 20, 1.2, 0.25)
+        assert min_web(a, 120, 20, 1.2, 0.25) >= 0.4 - 1e-9
+
+

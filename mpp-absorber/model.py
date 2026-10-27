@@ -45,22 +45,52 @@ def _mpp_z(w, d, t, pitch):
     return r + 1j * x
 
 
-def double_mpp(f, layers):
-    """Two (or more) MPP leaves in series, each followed by its own air gap.
+def stack_field(f, layers, open_frac=None):
+    """Field and energy split through MPP leaves in series, each with its own air gap.
 
-    layers: list of (d, t, pitch, gap) from the front face to the rigid back.
-    Returns (alpha, reflection coefficient) per frequency.
+    layers     list of (d, t, pitch, gap) from the front face to the rigid back;
+               gap is the cavity behind that leaf.
+    open_frac  per-leaf fraction of holes that open into the cavity (None = all).
+               Holes sitting on a rib open onto solid plastic, so they do not count.
+
+    Returns a dict with, per frequency:
+      alpha, refl  absorption and reflection coefficient at the front face
+      share        absorbed fraction taken by each leaf (sums to alpha)
+      cav          per cavity, (P, Q) at its top face, so that inside the cavity
+                   p(x) = P exp(-j k x) + Q exp(+j k x), x measured down from the top
     """
     f = np.atleast_1d(np.asarray(f, dtype=float))
     w = 2 * np.pi * f
     k0 = w / C
-    # Start at the rigid back and work toward the front.
-    d, t, p, gap = layers[-1]
-    z_load = np.zeros_like(w, dtype=complex)
-    z_load = _mpp_z(w, d, t, p) + (-1j * RHOC / np.tan(k0 * gap))
-    for d, t, p, gap in reversed(layers[:-1]):
+    open_frac = [1.0] * len(layers) if open_frac is None else open_frac
+    zs = [_mpp_z(w, d, t, p) / o for (d, t, p, _), o in zip(layers, open_frac)]
+    gaps = [g for _, _, _, g in layers]
+
+    # Impedance from the rigid back toward the front face.
+    z_load = zs[-1] + (-1j * RHOC / np.tan(k0 * gaps[-1]))
+    for z, gap in zip(reversed(zs[:-1]), reversed(gaps[:-1])):
         tn = np.tan(k0 * gap)
-        z_gap = RHOC * (z_load + 1j * RHOC * tn) / (RHOC + 1j * z_load * tn)
-        z_load = _mpp_z(w, d, t, p) + z_gap
+        z_load = z + RHOC * (z_load + 1j * RHOC * tn) / (RHOC + 1j * z_load * tn)
     refl = (z_load - RHOC) / (z_load + RHOC)
-    return 1 - np.abs(refl) ** 2, refl
+    alpha = 1 - np.abs(refl) ** 2
+
+    # Walk the pressure p and velocity u (positive into the panel) down the stack.
+    p = 1 + refl
+    u = (1 - refl) / RHOC
+    share, cav = [], []
+    for z, gap in zip(zs, gaps):
+        share.append(z.real * np.abs(u) ** 2 * RHOC)
+        p = p - z * u                                  # pressure drop across the leaf
+        P = (p + RHOC * u) / 2
+        Q = (p - RHOC * u) / 2
+        cav.append((P, Q))
+        e_in = np.exp(-1j * k0 * gap)
+        e_out = np.exp(1j * k0 * gap)
+        p, u = P * e_in + Q * e_out, (P * e_in - Q * e_out) / RHOC
+    return {'alpha': alpha, 'refl': refl, 'share': np.array(share), 'cav': cav}
+
+
+def double_mpp(f, layers, open_frac=None):
+    """Two (or more) MPP leaves in series. Returns (alpha, reflection coefficient)."""
+    out = stack_field(f, layers, open_frac)
+    return out['alpha'], out['refl']

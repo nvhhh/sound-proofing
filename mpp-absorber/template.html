@@ -48,6 +48,10 @@
   ul { padding-left: 20px; margin: 6px 0; }
   li { margin: 3px 0; }
   .note { font-size: 13px; color: var(--muted); }
+  .bars div { display: grid; grid-template-columns: 90px 1fr 46px; gap: 8px; align-items: center; font-size: 13px; margin: 5px 0; }
+  .bars i { display: block; height: 10px; border-radius: 5px; background: var(--line); overflow: hidden; }
+  .bars b { display: block; height: 100%; width: 0; background: var(--accent); }
+  .bars em { font-style: normal; text-align: right; color: var(--muted); }
   @media (max-width: 600px) {
     .readout { grid-template-columns: repeat(2, 1fr); }
     #scene { height: 340px; }
@@ -61,7 +65,7 @@
      Drag to orbit, scroll to zoom. Move the frequency slider to see the standing-wave pattern change.</p>
 
   <div class="card">
-    <h2>3D view (sound arrives from the viewer's side, travels into the panel)</h2>
+    <h2>3D view: sound arrives from the viewer's side. Drag Explode to see the layers.</h2>
     <div id="scene"></div>
     <div class="legend">
       <span><span class="sw" style="background:#c8553d"></span>positive pressure (compression)</span>
@@ -73,19 +77,32 @@
       <label for="freq" class="muted">Frequency</label>
       <input id="freq" type="range" min="0" max="239" value="0" step="1">
     </div>
+    <div class="controls">
+      <label for="explode" class="muted">Explode</label>
+      <input id="explode" type="range" min="0" max="100" value="0" step="1">
+      <label class="muted"><input id="cavity" type="checkbox" checked> pressure inside the cavities</label>
+    </div>
     <div class="readout">
       <div><b id="rf">--</b><span>frequency</span></div>
       <div><b id="ra">--</b><span>absorption &alpha;</span></div>
       <div><b id="rr">--</b><span>reflected energy |R|&sup2;</span></div>
     </div>
-    <p class="note">Field shown: the incident wave plus its reflection in the room (1-D normal-incidence model).
-       The front face is tinted by the air velocity entering (red) or leaving (blue) the 0.5&nbsp;mm holes.
+    <div class="bars">
+      <div><span>front leaf</span><i><b id="bf"></b></i><em id="bfv"></em></div>
+      <div><span>rear leaf</span><i><b id="br"></b></i><em id="brv"></em></div>
+      <div><span>all leaves</span><i><b id="ba"></b></i><em id="bav"></em></div>
+    </div>
+    <p class="note">Bars: share of the incident energy each leaf turns into heat in its holes. The two leaves together give &alpha;.</p>
+    <p class="note">Room: the incident wave plus its reflection (1-D normal-incidence model). Inside each air gap the sheets show
+       the standing wave between a leaf and the wall behind it. The front face is tinted by the air velocity entering (red)
+       or leaving (blue) the 0.5&nbsp;mm holes. Explode pulls the five parts apart for viewing only; the field shown is the assembled one.
        Animation time is slowed down so the motion is visible; wavelengths and phase relations are physical.</p>
   </div>
 
   <div class="card">
     <h2>Absorption across the band</h2>
     <canvas id="chart"></canvas>
+    <p class="note">Solid line: ideal model. Dashed: as built, with the holes that sit on a rib removed.</p>
     <p class="note" id="summary"></p>
   </div>
 
@@ -94,16 +111,16 @@
     <table>
       <tr><th>Material</th><td>PLA or PETG, single material, one print</td></tr>
       <tr><th>Coupon</th><td>120 &times; 120 mm, 53.6 mm deep</td></tr>
-      <tr><th>Front leaf</th><td>0.8 mm thick, 0.5 mm holes on a 3 mm grid (1600 holes, &sigma;&nbsp;&asymp;&nbsp;3.1%)</td></tr>
+      <tr><th>Front leaf</th><td>0.8 mm thick, 0.5 mm holes on a 3 mm grid (1600 holes, &sigma;&nbsp;&asymp;&nbsp;2.2%; 231 of them sit on a rib and are blocked)</td></tr>
       <tr><th>Air gap 1</th><td>25 mm, divided by 1.2 mm ribs on a 20 mm grid</td></tr>
-      <tr><th>Rear leaf</th><td>0.8 mm thick, 0.5 mm holes on a 6 mm grid (400 holes, &sigma;&nbsp;&asymp;&nbsp;1.8%)</td></tr>
+      <tr><th>Rear leaf</th><td>0.8 mm thick, 0.5 mm holes on a 6 mm grid (400 holes, &sigma;&nbsp;&asymp;&nbsp;0.55%; 76 of them sit on a rib and are blocked)</td></tr>
       <tr><th>Air gap 2</th><td>25 mm, same ribbed grid</td></tr>
       <tr><th>Back wall</th><td>2 mm solid</td></tr>
       <tr><th>Print</th><td>0.4 mm nozzle, 0.1 mm layers, front leaf on the bed, 3 perimeters, no top/bottom gaps in the leaves. Enable hole compensation or drill-check the 0.5 mm holes.</td></tr>
     </table>
     <p class="note">Why two leaves: one perforated plate gives a narrow peak. Two leaves with different hole spacing
-       stagger their resonances, which spreads the absorption across the band. The rear leaf also carries the
-       air gap 2 resonance up toward 1&ndash;2 kHz.</p>
+       stagger their resonances, which spreads the absorption across the band. In the model the rear leaf takes about
+       33% of the incident energy across the band and the front leaf about 23%.</p>
   </div>
 
   <div class="card">
@@ -112,6 +129,8 @@
       <li>The curves come from the Maa (1998) micro-perforated-panel model at normal incidence. The 3D view shows that 1-D field, not a full 3-D simulation of the holes.</li>
       <li>The band average is about 0.56, with dips near 300 Hz and above 2.5 kHz. A realistic target is a broad mid-band absorber, not a flat 1.0 across 300&ndash;3000 Hz. Filling the edges needs a deeper cavity or a third leaf.</li>
       <li>0.5 mm holes are at the limit of a 0.4 mm nozzle. Print a test strip first and measure the real hole diameter.</li>
+      <li>About 14% of the front-leaf holes and 19% of the rear-leaf holes sit on a rib and are blocked. The model ignores this; with them removed the band average stays at about 0.56, but that is wasted area.</li>
+      <li>The model has no end correction. Adding about 0.85&nbsp;d (0.4 mm) to the plate thickness raises the band average to about 0.58, so the true value is uncertain by a few hundredths.</li>
       <li>Validate before trusting the numbers: test a printed coupon in an impedance tube (ASTM E1050 or ISO 10534-2).</li>
     </ul>
   </div>
@@ -140,7 +159,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 host.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 50);
-camera.position.set(1.9, 1.5, 2.6);
+camera.position.set(2.2, 1.6, 3.6);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0.6, 0.6, -0.2);
 controls.enableDamping = true;
@@ -178,19 +197,22 @@ const rearPlate = new THREE.Mesh(new THREE.ShapeGeometry(holedShape(6), 6), plat
 rearPlate.position.z = Z.leaf2;
 scene.add(frontPlate, rearPlate);
 
-const ribMat = new THREE.MeshStandardMaterial({ color: 0xb8bec6, roughness: 0.8 });
-function addRibs(zCenter, height) {
+const ribMat = new THREE.MeshStandardMaterial({ color: 0xb8bec6, roughness: 0.8, transparent: true, opacity: 0.5, depthWrite: false });
+function addRibs(group, zCenter, height) {
   for (let i = 0; i <= 6; i++) {
     const x = i < 6 ? i * stepMM(20) + stepMM(0.6) : SIZE - stepMM(0.6);
     const a = new THREE.Mesh(new THREE.BoxGeometry(stepMM(1.2), SIZE, height), ribMat);
     a.position.set(x, SIZE / 2, zCenter);
     const b = new THREE.Mesh(new THREE.BoxGeometry(SIZE, stepMM(1.2), height), ribMat);
     b.position.set(SIZE / 2, x, zCenter);
-    scene.add(a, b);
+    group.add(a, b);
   }
 }
-addRibs((Z.gap1 + Z.leaf2) / 2, Z.gap1 - Z.leaf2 < 0 ? Z.leaf2 - Z.gap1 : Z.gap1 - Z.leaf2);
-addRibs((Z.gap2 + Z.back) / 2, Z.gap2 - Z.back);
+// Each rib wall is one air cavity; the cavity field is drawn inside these groups.
+const cav1Part = new THREE.Group(), cav2Part = new THREE.Group();
+addRibs(cav1Part, (Z.gap1 + Z.leaf2) / 2, Z.gap1 - Z.leaf2);
+addRibs(cav2Part, (Z.gap2 + Z.back) / 2, Z.gap2 - Z.back);
+scene.add(cav1Part, cav2Part);
 const back = new THREE.Mesh(new THREE.BoxGeometry(SIZE, SIZE, Z.end - Z.back), ribMat);
 back.position.set(SIZE / 2, SIZE / 2, (Z.back + Z.end) / 2);
 scene.add(back);
@@ -201,9 +223,41 @@ const flow = new THREE.Mesh(new THREE.PlaneGeometry(SIZE, SIZE), flowMat);
 flow.position.set(SIZE / 2, SIZE / 2, 0.002);
 scene.add(flow);
 
+// ----- exploded layout: five parts, pushed apart along depth as Explode rises
+let explode = 0;
+const STEP = 0.15;                              // gap between parts when exploded (15 mm)
+const offset = (i) => -explode * STEP * i;      // i = 0 front leaf, 1 cavity 1, 2 rear leaf, 3 cavity 2, 4 back
+const CAV_HALF = 0.125;                         // rib walls are 25 mm tall
+function gapBounds(g) {
+  const mid = g === 1 ? (Z.gap1 + Z.leaf2) / 2 + offset(1) : (Z.gap2 + Z.back) / 2 + offset(3);
+  return [mid + CAV_HALF, mid - CAV_HALF];      // [top, bottom] in scene z
+}
+// Cavity sheets: each is a slice of the 1-D standing wave inside one air gap.
+const NS = 14;
+const cavSheets = [];
+for (const g of [1, 2]) for (let i = 0; i < NS; i++) {
+  const m = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+  const s = new THREE.Mesh(new THREE.PlaneGeometry(SIZE, SIZE), m);
+  s.position.x = SIZE / 2; s.position.y = SIZE / 2;
+  scene.add(s);
+  cavSheets.push({ mesh: s, mat: m, gap: g, frac: (i + 0.5) / NS });
+}
+function layOut() {
+  frontPlate.position.z = Z.front + offset(0);
+  flow.position.z = 0.002 + offset(0);
+  cav1Part.position.z = offset(1);
+  rearPlate.position.z = Z.leaf2 + offset(2);
+  cav2Part.position.z = offset(3);
+  back.position.z = (Z.back + Z.end) / 2 + offset(4);
+  for (const s of cavSheets) {
+    const [top, bot] = gapBounds(s.gap);
+    s.mesh.position.z = top + (bot - top) * s.frac;
+  }
+}
+
 // Pressure sheets in the room: each one is a slice of the 1-D wave at its depth.
-const SHEETS = 60;
-const ROOM = 3.0;                               // room depth shown, scene units
+const SHEETS = 24;
+const ROOM = 1.2;                               // room depth shown, scene units (12 cm); camera stays outside it
 const sheetMat = [];
 for (let i = 0; i < SHEETS; i++) {
   const m = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
@@ -275,6 +329,13 @@ function drawChart() {
     ctx.beginPath(); ctx.moveTo(x(f), padT); ctx.lineTo(x(f), h - padB); ctx.stroke();
     ctx.fillText(f + ' Hz', x(f) - 18, h - 14);
   }
+  ctx.setLineDash([6, 4]); ctx.strokeStyle = muted; ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const px = x(D.f[i]), py = y(D.alpha_built[i]);
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
   ctx.strokeStyle = fg; ctx.lineWidth = 2;
   ctx.beginPath();
   for (let i = 0; i < N; i++) {
@@ -288,8 +349,8 @@ function drawChart() {
   ctx.beginPath(); ctx.arc(x(D.f[idx]), y(D.alpha[idx]), 4, 0, Math.PI * 2); ctx.fill();
 }
 document.getElementById('summary').textContent =
-  'Mean absorption over 300–3000 Hz (log-spaced samples): ' + D.mean.toFixed(2) +
-  '. Weakest near 300 Hz and above 2.5 kHz. The rear leaf and gap 2 carry the mid-to-high range.';
+  'Mean absorption over 300–3000 Hz: ' + D.mean.toFixed(2) + ' (ideal). With the holes on ribs removed: ' +
+  D.mean_built.toFixed(2) + '. Weakest near 300 Hz and above 2.5 kHz.';
 
 // ----- controls ------------------------------------------------------------
 const slider = document.getElementById('freq');
@@ -300,6 +361,13 @@ function syncReadout() {
   document.getElementById('rf').textContent = Math.round(D.f[idx]) + ' Hz';
   document.getElementById('ra').textContent = D.alpha[idx].toFixed(2);
   document.getElementById('rr').textContent = (R.re * R.re + R.im * R.im).toFixed(2);
+  const sf = D.share_front[idx], sr = D.share_rear[idx];
+  document.getElementById('bf').style.width = (100 * sf).toFixed(1) + '%';
+  document.getElementById('br').style.width = (100 * sr).toFixed(1) + '%';
+  document.getElementById('ba').style.width = (100 * D.alpha[idx]).toFixed(1) + '%';
+  document.getElementById('bfv').textContent = Math.round(100 * sf) + '%';
+  document.getElementById('brv').textContent = Math.round(100 * sr) + '%';
+  document.getElementById('bav').textContent = Math.round(100 * D.alpha[idx]) + '%';
   drawChart();
 }
 slider.addEventListener('input', () => { idx = +slider.value; syncReadout(); });
@@ -308,6 +376,8 @@ document.getElementById('play').addEventListener('click', (e) => {
   e.target.textContent = playing ? 'Pause' : 'Play';
 });
 window.addEventListener('resize', drawChart);
+document.getElementById('explode').addEventListener('input', (e) => { explode = +e.target.value / 100; layOut(); });
+layOut();
 syncReadout();
 
 // ----- animation -----------------------------------------------------------
@@ -322,7 +392,20 @@ function animate() {
     const p = pressureAt(s.z, theta, idx);
     const a = Math.min(1, Math.abs(p));
     s.mat.color.set(p >= 0 ? 0xc8553d : 0x2f6fbf);
-    s.mat.opacity = 0.42 * a;
+    s.mat.opacity = 0.035 * a;                      // sheets stack, so each one is kept faint
+  }
+  const showCav = document.getElementById('cavity').checked;
+  for (const s of cavSheets) {
+    const [top] = gapBounds(s.gap);
+    const x = (top - s.mesh.position.z) * UNIT;             // depth below the cavity top, m
+    const kk = 2 * Math.PI * D.f[idx] / SPEED;
+    const c = D['cav' + s.gap];                              // [Pre, Pim, Qre, Qim] at the cavity top
+    const cs = Math.cos(kk * x), sn = Math.sin(kk * x);
+    const re = (c[0][idx] + c[2][idx]) * cs + (c[1][idx] - c[3][idx]) * sn;
+    const im = (c[1][idx] + c[3][idx]) * cs - (c[0][idx] - c[2][idx]) * sn;
+    const p = Math.cos(theta) * re - Math.sin(theta) * im;   // p(x) = P e^{-jkx} + Q e^{jkx}
+    s.mat.color.set(p >= 0 ? 0xc8553d : 0x2f6fbf);
+    s.mat.opacity = showCav ? 0.12 * Math.min(1, Math.abs(p) / 1.5) : 0;
   }
   const u = flowAt(theta, idx);
   const mag = Math.min(1, Math.abs(u));

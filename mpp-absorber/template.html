@@ -199,6 +199,13 @@
   </div>
 
   <div class="card">
+    <h2>Product line: three tiles and a 240 mm bed mix</h2>
+    <p class="note">Each product is a 120 mm tile. The bed mix is four tiles on a 240 mm print bed, chosen to keep the worst band as high as possible from 125 Hz to 4 kHz.</p>
+    <table id="prodtable" style="margin-top:8px"></table>
+    <p class="note" id="prodnote"></p>
+  </div>
+
+  <div class="card">
     <h2>Limits of this proof of concept</h2>
     <ul>
       <li>The curves use the exact viscous tube (Bessel) impedance of each hole at normal incidence, with an end correction of 0.68&nbsp;d, calibrated to a resolved 2-D simulation of one hole. The older Maa (1998) fit gave 0.56 and is kept for comparison. The 3D view shows the 1-D field, not a full 3-D simulation of the hole mouths.</li>
@@ -502,6 +509,20 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
+
+// ----- product line -----
+(() => {
+  const P = D.products, tbl = document.getElementById('prodtable');
+  const head = '<tr><th>Product</th>' + P.bands.map(b => '<th>' + (b >= 1000 ? (b / 1000) + ' k' : b) + '</th>').join('') + '<th>Depth</th></tr>';
+  const rows = P.items.map(it => '<tr><td>' + it.name + '<div class="note">' + it.note + '</div></td>' +
+    it.alpha.map(a => '<td>' + a.toFixed(2) + '</td>').join('') + '<td>' + it.depth_mm + ' mm</td></tr>');
+  const bed = P.bed.bands;
+  rows.push('<tr><td><b>Bed mix</b><div class="note">3 &times; P1 + 1 &times; P2 on a 240 mm bed</div></td>' +
+    bed.map(a => '<td><b>' + a.toFixed(2) + '</b></td>').join('') + '<td>-</td></tr>');
+  tbl.innerHTML = head + rows.join('');
+  document.getElementById('prodnote').textContent = 'Bed mix: mean ' + P.bed.mean_125_4k.toFixed(2) +
+    ' from 125 Hz to 4 kHz, worst band ' + P.bed.min_125_4k.toFixed(2) + '. Model values, not measured.';
+})();
 </script>
 </body>
 </html>

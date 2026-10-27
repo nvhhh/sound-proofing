@@ -1,0 +1,70 @@
+{
+ "bands": [
+  63,
+  125,
+  250,
+  500,
+  1000,
+  2000,
+  4000
+ ],
+ "products": {
+  "P1 bass trap": {
+   "note": "<250 Hz: deep rear cell with a 5 mm neck",
+   "depth_mm": 87,
+   "alpha": [
+    0.905,
+    0.739,
+    0.394,
+    0.37,
+    0.514,
+    0.677,
+    0.18
+   ]
+  },
+  "P2 mid-high": {
+   "note": "250 Hz to 4 kHz: three leaves, shallow front cells",
+   "depth_mm": 65,
+   "alpha": [
+    0.008,
+    0.033,
+    0.16,
+    0.743,
+    0.833,
+    0.52,
+    0.572
+   ]
+  },
+  "P3 low-mid": {
+   "note": "125 to 500 Hz: rigid rear cell, 70 mm",
+   "depth_mm": 97,
+   "alpha": [
+    0.048,
+    0.19,
+    0.713,
+    0.727,
+    0.469,
+    0.62,
+    0.125
+   ]
+  }
+ },
+ "bed": {
+  "counts": {
+   "P1 bass trap": 3,
+   "P2 mid-high": 1,
+   "P3 low-mid": 0
+  },
+  "bands": [
+   0.681,
+   0.562,
+   0.336,
+   0.463,
+   0.594,
+   0.638,
+   0.278
+  ],
+  "mean_125_4k": 0.478,
+  "min_125_4k": 0.278
+ }
+}

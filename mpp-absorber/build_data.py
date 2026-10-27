@@ -53,6 +53,13 @@ print('band mean share front %.3f rear %.3f' % (band_mean(share[0], f), band_mea
 for hz in [300, 500, 800, 1000, 1500, 2000, 2500, 3000]:
     print(hz, round(float(np.interp(hz, f, alpha)), 2))
 
+from products import product_bands, bed_mix, PRODUCTS, BANDS as PBANDS
+_pb = product_bands()
+PRODUCTS_OUT = dict(bands=PBANDS,
+                    items=[dict(name=n, note=p['note'], depth_mm=p['depth_mm'], alpha=_pb[n]) for n, p in PRODUCTS.items()],
+                    bed=bed_mix(_pb))
+
+
 def rnd(a, n=5):
     return np.round(np.asarray(a), n).tolist()
 
@@ -79,6 +86,7 @@ data = {
     'low_band': round(low_band(NECK_LAYERS_FIELD), 3),
     'low_band_built': round(low_band(None), 3),
     'neck': GEOM['neck_bore_mm'],
+    'products': PRODUCTS_OUT,
 }
 with open(os.path.join(HERE, 'data.json'), 'w') as fh:
     json.dump(data, fh)

@@ -87,3 +87,15 @@ A studio target of 0.3–0.4 s at 500 Hz to 2 kHz needs about 30 m² of tile on 
 Necks trade mid-band absorption for low-end absorption at the same depth. At 100 mm rigid depth, the rigid cavity (0.57 at 120–250 Hz) beats the neck; the necks are for when the depth is limited to about 60 mm. Modelled with the exact tube impedance for the neck (`neck_z` in `model.py`), a resonance-broadened Helmholtz check; not measured.
 
 Energy: the neck's power goes into the wall space behind the tile, and the model counts it as absorbed (about 3% of the band energy). That assumes the wall space takes up the sound and does not return it to the room. A sealed or reflective back would change this.
+
+## Product line (`products.py`)
+Model octave-band absorption, normal incidence. Each product is a 120 mm tile; the bed mix is four tiles on a 240 mm bed.
+
+| Product | 63 | 125 | 250 | 500 | 1 k | 2 k | 4 k | Depth |
+|---|---|---|---|---|---|---|---|---|
+| P1 bass trap | 0.91 | 0.74 | 0.39 | 0.37 | 0.51 | 0.68 | 0.18 | 87 mm |
+| P2 mid-high | 0.01 | 0.03 | 0.16 | 0.74 | 0.83 | 0.52 | 0.57 | 65 mm |
+| P3 low-mid | 0.05 | 0.19 | 0.71 | 0.73 | 0.47 | 0.62 | 0.12 | 97 mm |
+| Bed mix (3×P1 + 1×P2, 240 mm bed) | 0.68 | 0.56 | 0.34 | 0.46 | 0.59 | 0.64 | 0.28 | 87 / 65 mm |
+
+Bed mix: mean 0.48 from 125 Hz to 4 kHz, worst band 0.28. Mixes were scored worst band first, then the mean, so no band is left dead. The bench and room page use these values. Model estimates, not measured.

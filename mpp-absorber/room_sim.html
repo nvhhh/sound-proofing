@@ -48,6 +48,8 @@
         <option value="living">Living room, 5 × 4 × 2.5 m</option>
         <option value="studio">Studio, 6 × 5 × 3 m</option>
       </select>
+      <label for="prod" class="muted">Product</label>
+      <select id="prod"></select>
       <label for="tsize" class="muted">Tile</label>
       <select id="tsize">
         <option value="0.12">120 × 120 mm</option>
@@ -106,7 +108,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // Room data from the model (room_data.json) and the tile absorption by octave band.
 const BANDS = [125, 250, 500, 1000, 2000, 4000];
-const TILE = { 125: 0.20, 250: 0.35, 500: 0.81, 1000: 0.65, 2000: 0.64, 4000: 0.26 };   // model band averages, 125/4k assumed
+// Per-product octave absorption (products.json, model, 125 Hz to 4 kHz)
+const PRODUCT_TILES = {"P1 bass trap": [0.739, 0.394, 0.37, 0.514, 0.677, 0.18], "P2 mid-high": [0.033, 0.16, 0.743, 0.833, 0.52, 0.572], "P3 low-mid": [0.19, 0.713, 0.727, 0.469, 0.62, 0.125], "Bed mix (3\u00d7P1 + 1\u00d7P2)": [0.562, 0.336, 0.463, 0.594, 0.638, 0.278]};
+const tileMap = (arr) => Object.fromEntries([125, 250, 500, 1000, 2000, 4000].map((b, i) => [b, arr[i]]));
+let TILE = tileMap(PRODUCT_TILES[Object.keys(PRODUCT_TILES)[0]]);
 const DIFFUSE = 0.8;
 let TILE_SIDE = 0.12;                                       // tile face size, m (120 or 240 mm)
 let TILE_M2 = TILE_SIDE * TILE_SIDE;                         // tile face area, m^2
@@ -256,6 +261,13 @@ pick.addEventListener('change', () => {
   update();
 });
 cov.addEventListener('input', update);
+for (const k of Object.keys(PRODUCT_TILES)) {
+  const o = document.createElement('option'); o.value = k; o.textContent = k; $('prod').appendChild(o);
+}
+$('prod').addEventListener('change', (e) => {
+  TILE = tileMap(PRODUCT_TILES[e.target.value]);
+  update();
+});
 $('tsize').addEventListener('change', (e) => {
   TILE_SIDE = +e.target.value; TILE_M2 = TILE_SIDE * TILE_SIDE; SPACING = TILE_SIDE + 0.02;
   update();

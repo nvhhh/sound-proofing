@@ -114,3 +114,12 @@ def test_report_bass_face_regression():
     a = slit_absorption(f, slits, D=112e-3, cell=48e-3)
     band = a[(f >= 125) & (f <= 250)]
     assert 0.7 < band.mean() < 0.9
+
+
+def test_foam_fill_reduces_to_air_at_low_resistivity():
+    # Delany-Bazley with tiny flow resistivity is air; the foam stack must match the air stack.
+    from rerun_models import foam_alpha
+    layers = [(0.5e-3, 1e-3, 2e-3, 10e-3), (0.5e-3, 1e-3, 2.5e-3, 25e-3), (0.5e-3, 1e-3, 5e-3, 20e-3)]
+    f = np.geomspace(100, 4000, 200)
+    air = stack_field(f, layers)['alpha']
+    assert np.max(np.abs(foam_alpha(f, layers, sigma=1.0, depth=10e-3, t_end=0.68) - air)) < 0.01
